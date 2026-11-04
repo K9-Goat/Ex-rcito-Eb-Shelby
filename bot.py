@@ -301,6 +301,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
             color=discord.Color.green()
         )
+       
         embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {cargo_categoria.mention if cargo_categoria else nome_categoria}", inline=False)
         embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
         embed.add_field(name="🔓 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
