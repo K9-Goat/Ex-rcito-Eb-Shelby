@@ -475,6 +475,231 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
         
 
+@bot.tree.command(name="promover_varios", description="Promove até 5 militares de uma só vez respeitando a hierarquia e CDP.")
+async def promover_varios(
+    interaction: discord.Interaction, 
+    cargo_patente: discord.Role,
+    membro1: discord.Member,
+    membro2: discord.Member = None,
+    membro3: discord.Member = None,
+    membro4: discord.Member = None,
+    membro5: discord.Member = None
+):
+    await interaction.response.defer()
+
+    try:
+        nome_cargo_novo = cargo_patente.name
+        config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
+        
+        if not config_novo:
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
+            return
+
+        # 1. Identificar a Categoria do Autor da Promoção
+        categoria_autor = None
+        nivel_autor = 0
+
+        for nome_p, cfg in PATENTES_CONFIG.items():
+            if cfg["tag"] in interaction.user.display_name:
+                categoria_autor = cfg["categoria"]
+                nivel_autor = HIERARQUIA_CATEGORIAS.get(categoria_autor, 0)
+                break
+
+        if nivel_autor == 0:
+            for role in interaction.user.roles:
+                if role.name in HIERARQUIA_CATEGORIAS:
+                    categoria_autor = role.name
+                    nivel_autor = HIERARQUIA_CATEGORIAS[role.name]
+                    break
+
+        # 2. Regras de Permissão da Hierarquia
+        cat_destino = config_novo["categoria"]
+        nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
+
+        if nivel_autor <= 3:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
+            return
+        elif nivel_autor == 4 and nivel_destino > 1:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover **Praças**.")
+            return
+        elif nivel_autor == 5 and nivel_destino > 2:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover **Praças e Graduados**.")
+            return
+        elif nivel_autor == 6 and nivel_destino > 4:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos deste nível.")
+            return
+        elif nivel_autor == 7 and nivel_destino >= 7:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Generais não podem promover para cargos de nível General ou superior.")
+            return
+
+        # 3. Processar lista de membros fornecidos (filtra os repetidos e nulos)
+        membros_raw = [membro1, membro2, membro3, membro4, membro5]
+        membros = list(dict.fromkeys([m for m in membros_raw if m is not None]))
+
+        cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
+        agora = datetime.datetime.now()
+        horas_cdp = config_novo["horas"]
+        data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+
+        promovidos = []
+        bloqueados_cdp = []
+
+        for membro in membros:
+            # Verifica CDP de cada um
+            if membro.id in historico_cdp:
+                liberacao = historico_cdp[membro.id]
+                if agora < liberacao:
+                    restante = liberacao - agora
+                    horas = restante.seconds // 3600
+                    minutos = (restante.seconds % 3600) // 60
+                    bloqueados_cdp.append(f"• {membro.mention} *(Falta: {restante.days}d {horas}h {minutos}m)*")
+                    continue
+
+            # Adicionar Cargos
+            cargos_para_adicionar = [cargo_patente]
+            if cargo_categoria:
+                cargos_para_adicionar.append(cargo_categoria)
+
+            await membro.add_roles(*cargos_para_adicionar)
+
+            # Atualizar Apelido
+            tag = config_novo["tag"]
+            nome_limpo = membro.display_name.split("]")[-1].strip()
+            novo_nick = f"{tag} {nome_limpo}"[:32]
+            try:
+                await membro.edit(nick=novo_nick)
+            except Exception:
+                pass
+
+            # Registar CDP
+            historico_cdp[membro.id] = data_liberacao
+            promovidos.append(membro.mention)
+
+        # 4. Criar Embed com o Relatório
+        texto_categoria = cargo_categoria.mention if cargo_categoria else cat_destino
+
+        embed = discord.Embed(
+            title="📈 Promoção em Massa Realizada!",
+            description=f"Novo Cargo: **{cargo_patente.name}**\nCategoria: {texto_categoria}",
+            color=discord.Color.green()
+        )
+
+        if promovidos:
+            embed.add_field(name="✅ Militares Promovidos", value="\n".join([f"• {m}" for m in promovidos]), inline=False)
+        else:
+            embed.add_field(name="⚠️ Militares Promovidos", value="Nenhum militar foi promovido.", inline=False)
+
+        if bloqueados_cdp:
+            embed.add_field(name="🚫 Bloqueados por CDP", value="\n".join(bloqueados_cdp), inline=False)
+
+        embed.add_field(name="⏳ CDP Aplicada", value=f"**{horas_cdp} Horas** (até {data_liberacao.strftime('%d/%m/%Y às %H:%M')})", inline=False)
+        embed.set_footer(text=f"Promovidos por: {interaction.user.display_name}")
+
+        await interaction.followup.send(embed=embed)
+
+    except discord.Forbidden:
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos na lista do servidor!")
+    except Exception as e:
+        await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
+        
+
+@bot.tree.command(name="rebaixar_varios", description="Rebaixa até 5 militares de uma só vez atualizando cargos, apelidos e CDP.")
+async def rebaixar_varios(
+    interaction: discord.Interaction, 
+    cargo_patente_nova: discord.Role,
+    membro1: discord.Member,
+    membro2: discord.Member = None,
+    membro3: discord.Member = None,
+    membro4: discord.Member = None,
+    membro5: discord.Member = None
+):
+    await interaction.response.defer()
+
+    try:
+        nome_cargo_novo = cargo_patente_nova.name
+        config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
+        
+        if not config_nova:
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
+            return
+
+        membros_raw = [membro1, membro2, membro3, membro4, membro5]
+        membros = list(dict.fromkeys([m for m in membros_raw if m is not None]))
+
+        nome_cat_nova = config_nova["categoria"]
+        cargo_cat_novo = discord.utils.get(interaction.guild.roles, name=nome_cat_nova)
+        agora = datetime.datetime.now()
+        horas_cdp = config_nova["horas"]
+        data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+
+        rebaixados = []
+
+        for membro in membros:
+            # Identificar e remover cargos antigos
+            config_antiga = None
+            cargo_patente_antigo = None
+            cargo_categoria_antigo = None
+
+            for nome_p, cfg in PATENTES_CONFIG.items():
+                if cfg["tag"] in membro.display_name:
+                    config_antiga = cfg
+                    cargo_patente_antigo = discord.utils.get(interaction.guild.roles, name=nome_p)
+                    if cfg["categoria"]:
+                        cargo_categoria_antigo = discord.utils.get(interaction.guild.roles, name=cfg["categoria"])
+                    break
+
+            cargos_remover = []
+            if cargo_patente_antigo:
+                cargos_remover.append(cargo_patente_antigo)
+            if cargo_categoria_antigo and config_antiga and config_antiga["categoria"] != nome_cat_nova:
+                cargos_remover.append(cargo_categoria_antigo)
+
+            if cargos_remover:
+                try:
+                    await membro.remove_roles(*cargos_remover)
+                except Exception:
+                    pass
+
+            # Adicionar novos cargos
+            cargos_adicionar = [cargo_patente_nova]
+            if cargo_cat_novo:
+                cargos_adicionar.append(cargo_cat_novo)
+
+            await membro.add_roles(*cargos_adicionar)
+
+            # Atualizar Apelido
+            tag_nova = config_nova["tag"]
+            nome_limpo = membro.display_name.split("]")[-1].strip()
+            novo_nick = f"{tag_nova} {nome_limpo}"[:32]
+            try:
+                await membro.edit(nick=novo_nick)
+            except Exception:
+                pass
+
+            # Resetar CDP
+            historico_cdp[membro.id] = data_liberacao
+            rebaixados.append(membro.mention)
+
+        # Embed de Sucesso
+        texto_cat_nova = cargo_cat_novo.mention if cargo_cat_novo else nome_cat_nova
+
+        embed = discord.Embed(
+            title="🔻 Rebaixamento em Massa Realizado!",
+            description=f"Novo Cargo: **{cargo_patente_nova.name}**\nNova Categoria: {texto_cat_nova}",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="📉 Militares Rebaixados", value="\n".join([f"• {m}" for m in rebaixados]), inline=False)
+        embed.add_field(name="⏳ Nova CDP Aplicada", value=f"**{horas_cdp} Horas** (até {data_liberacao.strftime('%d/%m/%Y às %H:%M')})", inline=False)
+        embed.set_footer(text=f"Rebaixados por: {interaction.user.display_name}")
+
+        await interaction.followup.send(embed=embed)
+
+    except discord.Forbidden:
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos na lista do servidor!")
+    except Exception as e:
+        await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
+                  
+
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
