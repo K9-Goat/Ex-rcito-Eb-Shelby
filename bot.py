@@ -238,9 +238,6 @@ PATENTES_CONFIG = {
     "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "Oficiais Generais"},
 }
 
-# Guardar histórico de CDP (ID do Membro -> Data e Hora de Liberação)
-historico_cdp = {}
-
 @bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
     nome_cargo = cargo_patente.name
@@ -261,11 +258,50 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             horas = restante.seconds // 3600
             minutos = (restante.seconds % 3600) // 60
             await interaction.response.send_message(
-                f"⚠️ **{membro.mention} ainda está em CDP!**\nFalta(m) **{restante.days}d {horas}h {minutos}m** para poder ser promovido.",
+                f"🚫 **PROMOÇÃO BLOQUEADA!**\n{membro.mention} ainda está em CDP.\nFalta(m) **{restante.days}d {horas}h {minutos}m** para poder ser promovido novamente.",
                 ephemeral=True
             )
-            return
+            return  # Interrompe o comando para NÃO promover
 
+    # Buscar o cargo da Categoria no servidor
+    nome_categoria = config["categoria"]
+    cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
+    
+    # Adicionar Cargos ao Membro
+    cargos_para_adicionar = [cargo_patente]
+    if cargo_categoria:
+        cargos_para_adicionar.append(cargo_categoria)
+
+    await membro.add_roles(*cargos_para_adicionar)
+
+    # Atualizar Apelido (Nickname)
+    tag = config["tag"]
+    nome_limpo = membro.display_name.split("]")[-1].strip()  # Remove tag antiga se existir
+    novo_nick = f"{tag} {nome_limpo}"[:32]
+    
+    try:
+        await membro.edit(nick=novo_nick)
+    except discord.Forbidden:
+        pass  # Bot sem permissão para mudar o nick de um superior
+
+    # Registar nova CDP
+    horas_cdp = config["horas"]
+    data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+    historico_cdp[membro.id] = data_liberacao
+
+    # Criar Embed de Confirmação
+    embed = discord.Embed(
+        title="📈 Promoção Realizada com Sucesso!",
+        description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {cargo_categoria.mention if cargo_categoria else nome_categoria}", inline=False)
+    embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
+    embed.add_field(name="🔓 Liberado para Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
+    embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
+
+    await interaction.response.send_message(embed=embed)
+    
     # Buscar o cargo da Categoria no servidor
     nome_categoria = config["categoria"]
     cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
