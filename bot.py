@@ -206,36 +206,36 @@ async def hierarquia(interaction: discord.Interaction):
 # Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
 PATENTES_CONFIG = {
     # Praças
-    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "🌾 Militares Praças"},
-    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "🌾 Militares Praças"},
-    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "🌾 Militares Praças"},
+    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "〘🌾〙  Militares Praças"},
+    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "〘🌾〙  Militares Praças"},
+    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "〘🌾〙  Militares Praças"},
     
     # Graduados
-    "[T-SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3º SGT]", "categoria": "🎓 Militares Graduados"},
-    "[S-SGT] Segundo-Sargento": {"horas": 20, "tag": "[2º SGT]", "categoria": "🎓 Militares Graduados"},
-    "[P-SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1º SGT]", "categoria": "🎓 Militares Graduados"},
-    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "🎓 Militares Graduados"},
+    "[T-SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3º SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[S-SGT] Segundo-Sargento": {"horas": 20, "tag": "[2º SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[P-SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1º SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "〘🎓〙 Militares Graduados"},
     
     # Praças Especiais
-    "[CDT] Cadete": {"horas": 35, "tag": "[CT]", "categoria": "🪖 Praças Especiais"},
+    "[CDT] Cadete": {"horas": 35, "tag": "[CT]", "categoria": "〘🪖〙 Praças Especiais"},
     
     # Oficiais Subalternos
-    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "🗡️ Oficiais Subalternos"},
-    "[S-TN] Segundo-Tenente": {"horas": 45, "tag": "[2º TEN]", "categoria": "🗡️ Oficiais Subalternos"},
-    "[P-TN] Primeiro-Tenente": {"horas": 50, "tag": "[1º TEN]", "categoria": "🗡️ Oficiais Subalternos"},
+    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "〘🗡️〙Oficiais Subalternos"},
+    "[S-TN] Segundo-Tenente": {"horas": 45, "tag": "[2º TEN]", "categoria": "〘🗡️速Oficiais Subalternos"},
+    "[P-TN] Primeiro-Tenente": {"horas": 50, "tag": "[1º TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
     
     # Oficiais Intermediários
-    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "⭐ Oficiais Intermediário"},
+    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "〘⭐️〙Oficiais Intermediário"},
     
     # Oficiais Superiores
-    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "🏅 Oficiais Superiores"},
-    "[TN-COL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "🏅 Oficiais Superiores"},
-    "[COL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "🏅 Oficiais Superiores"},
+    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "〘🏅〙Oficiais Superiores"},
+    "[TN-COL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
+    "[COL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
     
     # Oficiais Generais
-    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "⚔️ Oficiais Gerais"},
-    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "⚔️ Oficiais Gerais"},
-    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "⚔️ Oficiais Gerais"},
+    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "〘⚔️〙Oficiais Generais"},
 }
 
 # Guarda o histórico de CDP dos membros em memória
@@ -243,7 +243,6 @@ historico_cdp = {}
 
 @bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
-    # AVISA O DISCORD QUE O BOT ESTÁ A PROCESSAR
     await interaction.response.defer()
 
     try:
@@ -267,25 +266,16 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 )
                 return
 
-        # Procurar o cargo da Categoria ignorando emojis/símbolos para evitar falhas
+        # Busca pelo nome exato do cargo de Categoria configurado
         nome_categoria = config["categoria"]
-        cargo_categoria = None
-        
-        # Limpa o texto da categoria (remove emojis para comparar apenas as letras)
-        texto_base_cat = "".join([c for c in nome_categoria if c.isalnum() or c.isspace()]).strip().lower()
-        
-        for r in interaction.guild.roles:
-            r_nome_limpo = "".join([c for c in r.name if c.isalnum() or c.isspace()]).strip().lower()
-            if texto_base_cat in r_nome_limpo or r_nome_limpo in texto_base_cat:
-                cargo_categoria = r
-                break
+        cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
         
         # Lista de cargos a adicionar
         cargos_para_adicionar = [cargo_patente]
         if cargo_categoria:
             cargos_para_adicionar.append(cargo_categoria)
 
-        # Adiciona os cargos no servidor
+        # Adiciona os cargos ao membro
         await membro.add_roles(*cargos_para_adicionar)
 
         # Atualizar Apelido
@@ -303,13 +293,10 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
 
-        # Garantir menção clicável para a categoria encontrada
-        if cargo_categoria:
-            texto_categoria = cargo_categoria.mention
-        else:
-            texto_categoria = nome_categoria
+        # Define o texto da categoria: se encontrar o cargo, usa a menção (@)
+        texto_categoria = cargo_categoria.mention if cargo_categoria else nome_categoria
 
-        # Resposta de Sucesso com menções corretas
+        # Resposta de Sucesso
         embed = discord.Embed(
             title="📈 Promoção Realizada com Sucesso!",
             description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
@@ -326,7 +313,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot no Discord precisa de estar **ACIMA** das patentes na lista de Cargos do Servidor!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-                                    
+    
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
