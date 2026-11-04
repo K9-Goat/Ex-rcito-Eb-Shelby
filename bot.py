@@ -204,7 +204,7 @@ async def hierarquia(interaction: discord.Interaction):
 
 
 # Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
-PATENTES_CONFIG = {
+PATENTES_CONFIG = {}
  
     # Mapeamento do Nível de Autoridade (quanto maior o número, maior a autoridade)
 HIERARQUIA_CATEGORIAS = {
@@ -217,7 +217,15 @@ HIERARQUIA_CATEGORIAS = {
     "〘⚔️轮Oficiais Generais": 7,
 }
 
-    
+    # Tabela de permissão exclusiva para rebaixar (quanto maior o número, maior o poder)
+CARGOS_REBAIXAR_PERMISSAO = {
+    "〘⚖️〙 Secretaria-Geral do Exército": 1,
+    "[L-DEV] Leader Developer": 2,
+    "〘🛠️〙 Administração": 3,
+    "[Sb] Sub criador": 4,
+    "[Cr] Creator": 5,
+}
+
     
     
     # Praças
@@ -379,6 +387,16 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     await interaction.response.defer()
 
     try:
+        # 1. Verificar se o Autor tem um dos 5 cargos autorizados
+        nivel_autor = 0
+        for role in interaction.user.roles:
+            if role.name in CARGOS_REBAIXAR_PERMISSAO:
+                nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
+
+        if nivel_autor == 0:
+            await interaction.followup.send("🚫 **REBAIXAMENTO NEGADO!** Apenas membros da Secretaria-Geral, Leader Developer, Administração, Sub Criador ou Creator podem rebaixar.")
+            return
+
         nome_cargo_novo = cargo_patente_nova.name
         config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
         
@@ -386,13 +404,12 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
             await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
             return
 
-        # 1. Identificar Patente e Categoria Antigas pelo Apelido do Membro
+        # 2. Identificar Patente e Categoria Antigas pelo Apelido do Membro
         patente_antiga_nome = "Desconhecida"
         config_antiga = None
         cargo_patente_antigo = None
         cargo_categoria_antigo = None
 
-        # Procurar qual tag de patente o membro possui atualmente no nick
         for nome_p, cfg in PATENTES_CONFIG.items():
             if cfg["tag"] in membro.display_name:
                 patente_antiga_nome = nome_p
@@ -402,15 +419,13 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
                     cargo_categoria_antigo = discord.utils.get(interaction.guild.roles, name=cfg["categoria"])
                 break
 
-        # 2. Procurar Categoria Nova
+        # 3. Remover Cargos Antigos e Adicionar Novos
         nome_cat_nova = config_nova["categoria"]
         cargo_cat_novo = discord.utils.get(interaction.guild.roles, name=nome_cat_nova)
 
-        # 3. Remover Cargos Antigos e Adicionar Novos
         cargos_remover = []
         if cargo_patente_antigo:
             cargos_remover.append(cargo_patente_antigo)
-        # Só remove a categoria antiga se a pessoa mudar de categoria
         if cargo_categoria_antigo and config_antiga and config_antiga["categoria"] != nome_cat_nova:
             cargos_remover.append(cargo_categoria_antigo)
 
@@ -436,18 +451,17 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
         except Exception:
             pass
 
-        # 5. Atualizar/Resetar CDP para o novo cargo
+        # 5. Resetar CDP
         agora = datetime.datetime.now()
         horas_cdp = config_nova["horas"]
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
 
-        # Formatação das menções/textos para o Embed
+        # Formatação Embed
         texto_patente_antiga = cargo_patente_antigo.mention if cargo_patente_antigo else patente_antiga_nome
         texto_cat_antiga = cargo_categoria_antigo.mention if cargo_categoria_antigo else (config_antiga["categoria"] if config_antiga else "Sem Categoria")
         texto_cat_nova = cargo_cat_novo.mention if cargo_cat_novo else nome_cat_nova
 
-        # 6. Embed de Sucesso
         embed = discord.Embed(
             title="🔻 Rebaixamento Realizado!",
             description=f"O militar {membro.mention} foi rebaixado.",
@@ -470,10 +484,10 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send(embed=embed)
 
     except discord.Forbidden:
-        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos a remover/adicionar na lista do servidor!")
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos a gerir!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-        
+                                                               
 
 @bot.tree.command(name="promover_varios", description="Promove até 5 militares de uma só vez respeitando a hierarquia e CDP.")
 async def promover_varios(
@@ -603,7 +617,7 @@ async def promover_varios(
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
         
 
-@bot.tree.command(name="rebaixar_varios", description="Rebaixa até 5 militares de uma só vez atualizando cargos, apelidos e CDP.")
+@bot.tree.command(name="rebaixar_varios", description="Rebaixa até 5 militares de uma só vez respeitando as permissões administrativas.")
 async def rebaixar_varios(
     interaction: discord.Interaction, 
     cargo_patente_nova: discord.Role,
@@ -616,6 +630,16 @@ async def rebaixar_varios(
     await interaction.response.defer()
 
     try:
+        # 1. Verificar se o Autor tem um dos 5 cargos autorizados
+        nivel_autor = 0
+        for role in interaction.user.roles:
+            if role.name in CARGOS_REBAIXAR_PERMISSAO:
+                nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
+
+        if nivel_autor == 0:
+            await interaction.followup.send("🚫 **REBAIXAMENTO NEGADO!** Apenas membros da Secretaria-Geral, Leader Developer, Administração, Sub Criador ou Creator podem rebaixar.")
+            return
+
         nome_cargo_novo = cargo_patente_nova.name
         config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
         
@@ -635,7 +659,6 @@ async def rebaixar_varios(
         rebaixados = []
 
         for membro in membros:
-            # Identificar e remover cargos antigos
             config_antiga = None
             cargo_patente_antigo = None
             cargo_categoria_antigo = None
@@ -660,14 +683,12 @@ async def rebaixar_varios(
                 except Exception:
                     pass
 
-            # Adicionar novos cargos
             cargos_adicionar = [cargo_patente_nova]
             if cargo_cat_novo:
                 cargos_adicionar.append(cargo_cat_novo)
 
             await membro.add_roles(*cargos_adicionar)
 
-            # Atualizar Apelido
             tag_nova = config_nova["tag"]
             nome_limpo = membro.display_name.split("]")[-1].strip()
             novo_nick = f"{tag_nova} {nome_limpo}"[:32]
@@ -676,11 +697,9 @@ async def rebaixar_varios(
             except Exception:
                 pass
 
-            # Resetar CDP
             historico_cdp[membro.id] = data_liberacao
             rebaixados.append(membro.mention)
 
-        # Embed de Sucesso
         texto_cat_nova = cargo_cat_novo.mention if cargo_cat_novo else nome_cat_nova
 
         embed = discord.Embed(
@@ -698,7 +717,7 @@ async def rebaixar_varios(
         await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos na lista do servidor!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-                  
+    
 
 
 # Inicia o servidor web de suporte e o bot
