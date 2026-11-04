@@ -205,6 +205,21 @@ async def hierarquia(interaction: discord.Interaction):
 
 # Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
 PATENTES_CONFIG = {
+ 
+    # Mapeamento do Nível de Autoridade (quanto maior o número, maior a autoridade)
+HIERARQUIA_CATEGORIAS = {
+    "〘🌾轮  Militares Praças": 1,
+    "〘🎓轮 Militares Graduados": 2,
+    "〘🪖轮 Praças Especiais": 3,
+    "〘🗡️轮Oficiais Subalternos": 4,
+    "〘⭐️轮Oficiais Intermediário": 5,
+    "〘🏅轮Oficiais Superiores": 6,
+    "〘⚔️轮Oficiais Generais": 7,
+}
+
+    
+    
+    
     # Praças
     "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "〘🌾〙  Militares Praças"},
     "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "〘🌾〙  Militares Praças"},
@@ -241,19 +256,67 @@ PATENTES_CONFIG = {
 # Guarda o histórico de CDP dos membros em memória
 historico_cdp = {}
 
-@bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
+@bot.tree.command(name="promover", description="Promove um militar respeitando as permissões da hierarquia.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
     await interaction.response.defer()
 
     try:
-        nome_cargo = cargo_patente.name
-        config = PATENTES_CONFIG.get(nome_cargo)
+        nome_cargo_novo = cargo_patente.name
+        config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
         
-        if not config:
-            await interaction.followup.send(f"❌ O cargo **{nome_cargo}** não está registado na tabela de CDP.")
+        if not config_novo:
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
             return
 
-        # Verificar CDP
+        # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
+        categoria_autor = None
+        nivel_autor = 0
+
+        # Procura nas tags do apelido do autor para identificar a patente/categoria dele
+        for nome_p, cfg in PATENTES_CONFIG.items():
+            if cfg["tag"] in interaction.user.display_name:
+                categoria_autor = cfg["categoria"]
+                nivel_autor = HIERARQUIA_CATEGORIAS.get(categoria_autor, 0)
+                break
+
+        # Caso o autor não tenha tag no nick, verifica pelos cargos que possui no servidor
+        if nivel_autor == 0:
+            for role in interaction.user.roles:
+                if role.name in HIERARQUIA_CATEGORIAS:
+                    categoria_autor = role.name
+                    nivel_autor = HIERARQUIA_CATEGORIAS[role.name]
+                    break
+
+        # 2. Regras de Permissão por Categoria do Autor
+        cat_destino = config_novo["categoria"]
+        nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
+
+        # Regra 1: Praças (1), Graduados (2) e Praças Especiais (3) não podem promover ninguém
+        if nivel_autor <= 3:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
+            return
+
+        # Regra 2: Oficiais Subalternos (4) só promovem Praças (1)
+        elif nivel_autor == 4 and nivel_destino > 1:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover **Praças**.")
+            return
+
+        # Regra 3: Oficiais Intermediários (5) promovem Praças (1) e Graduados (2)
+        elif nivel_autor == 5 and nivel_destino > 2:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover **Praças e Graduados**.")
+            return
+
+        # Regra 4: Oficiais Superiores (6) promovem Praças (1), Graduados (2), Praças Especiais (3) e Subalternos (4)
+        elif nivel_autor == 6 and nivel_destino > 4:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos deste nível.")
+            return
+
+        # Regra 5: Generais (7) promovem todos, exceto patentes de nível igual ou superior ao seu
+        elif nivel_autor == 7 and nivel_destino >= 7:
+            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Generais não podem promover para cargos de nível General ou superior.")
+            return
+
+        # 3. Verificar CDP do Alvo
         agora = datetime.datetime.now()
         if membro.id in historico_cdp:
             liberacao = historico_cdp[membro.id]
@@ -266,20 +329,17 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 )
                 return
 
-        # Busca pelo nome exato do cargo de Categoria configurado
-        nome_categoria = config["categoria"]
-        cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
+        # 4. Processar Troca de Cargos
+        cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
         
-        # Lista de cargos a adicionar
         cargos_para_adicionar = [cargo_patente]
         if cargo_categoria:
             cargos_para_adicionar.append(cargo_categoria)
 
-        # Adiciona os cargos ao membro
         await membro.add_roles(*cargos_para_adicionar)
 
         # Atualizar Apelido
-        tag = config["tag"]
+        tag = config_novo["tag"]
         nome_limpo = membro.display_name.split("]")[-1].strip()
         novo_nick = f"{tag} {nome_limpo}"[:32]
         
@@ -289,14 +349,13 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             pass
 
         # Registar CDP
-        horas_cdp = config["horas"]
+        horas_cdp = config_novo["horas"]
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
 
-        # Define o texto da categoria: se encontrar o cargo, usa a menção (@)
-        texto_categoria = cargo_categoria.mention if cargo_categoria else nome_categoria
+        # Formatação do Embed
+        texto_categoria = cargo_categoria.mention if cargo_categoria else cat_destino
 
-        # Resposta de Sucesso
         embed = discord.Embed(
             title="📈 Promoção Realizada com Sucesso!",
             description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
@@ -310,10 +369,10 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send(embed=embed)
 
     except discord.Forbidden:
-        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot no Discord precisa de estar **ACIMA** das patentes na lista de Cargos do Servidor!")
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos a gerir na hierarquia!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-    
+            
 
 @bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta a CDP.")
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
