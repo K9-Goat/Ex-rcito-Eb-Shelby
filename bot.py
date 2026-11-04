@@ -389,7 +389,7 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     await interaction.response.defer()
 
         # 1. Verificar se o Autor tem um dos 5 cargos autorizados
-            nivel_autor = 0
+        nivel_autor = 0
                 for role in interaction.user.roles:
                 if role.name in CARGOS_REBAIXAR_PERMISSAO:
                         nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
