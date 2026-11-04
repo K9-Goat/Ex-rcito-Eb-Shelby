@@ -271,8 +271,8 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
     
     if not config_novo:
-    await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
-    return
+        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
+        return
 
                 # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
     categoria_autor = None
