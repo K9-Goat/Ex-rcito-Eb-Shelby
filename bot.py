@@ -203,9 +203,7 @@ async def hierarquia(interaction: discord.Interaction):
     
 
 
-# Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
-PATENTES_CONFIG = {}
- 
+
     # Mapeamento do Nível de Autoridade (quanto maior o número, maior a autoridade)
 HIERARQUIA_CATEGORIAS = {
     "〘🌾轮  Militares Praças": 1,
@@ -226,7 +224,8 @@ CARGOS_REBAIXAR_PERMISSAO = {
     "[Cr] Creator": 5,
 }
 
-    
+    # Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
+PATENTES_CONFIG = {
     
     # Praças
     "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "〘🌾〙  Militares Praças"},
