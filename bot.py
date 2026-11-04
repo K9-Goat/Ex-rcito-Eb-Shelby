@@ -724,15 +724,19 @@ async def sincroniza_comandos(interaction: discord.Interaction):
 async def on_ready():
     print(f"Bot ligado com sucesso como {bot.user}!")
     try:
-        # Coloca aqui o ID do teu servidor do Discord (entre parênteses)
-        MEU_SERVIDOR = discord.Object(id=1555695288075681822)
+        MEU_SERVIDOR = discord.Object(id=155569528807568122)
         
-        # Sincroniza instantaneamente apenas para o teu servidor
+        # 1. Limpa quaisquer comandos globais antigos que estejam a causar duplicação
+        bot.tree.clear_commands(guild=None)
+        await bot.tree.sync()
+        
+        # 2. Sincroniza limpo apenas no teu servidor para aparecerem instantaneamente
         bot.tree.copy_global_to(guild=MEU_SERVIDOR)
         synced = await bot.tree.sync(guild=MEU_SERVIDOR)
-        print(f"Comandos sincronizados instantaneamente no servidor: {len(synced)}")
+        print(f"Comandos sincronizados sem duplicações: {len(synced)}")
     except Exception as e:
-        print(f"Erro ao sincronizar comandos: {e}")
+        print(f"Erro ao sincronizar: {e}")
+        
 
 # Mantém o servidor web ativo e inicia o bot
 keep_alive()
