@@ -275,13 +275,13 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
             return
 
-            # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
+                # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
     categoria_autor = None
     nivel_autor = 0
 
     # Verificação de segurança: se fores Administrador ou General de Exército, nível máximo imediato!
     if interaction.user.guild_permissions.administrator:
-           nivel_autor = 7
+        nivel_autor = 7
     else:
         # Procura nas tags do apelido do autor
         for nome_p, cfg in PATENTES_CONFIG.items():
@@ -298,8 +298,9 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                     break
                 for cat_nome, cat_nivel in HIERARQUIA_CATEGORIAS.items():
                     if role.name in cat_nome or cat_nome in role.name:
-                           if cat_nivel > nivel_autor:
+                        if cat_nivel > nivel_autor:
                             nivel_autor = cat_nivel
+                            
                             
         # 2. Regras de Permissão por Categoria do Autor
         cat_destino = config_novo["categoria"]
