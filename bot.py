@@ -267,16 +267,18 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 )
                 return
 
-        # Procurar o cargo da Categoria (com suporte a emojis)
+        # Procurar o cargo da Categoria ignorando emojis/símbolos para evitar falhas
         nome_categoria = config["categoria"]
-        cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
+        cargo_categoria = None
         
-        # Se não encontrar pelo nome exato, procura por parte do nome
-        if not cargo_categoria:
-            for r in interaction.guild.roles:
-                if nome_categoria.lower() in r.name.lower():
-                    cargo_categoria = r
-                    break
+        # Limpa o texto da categoria (remove emojis para comparar apenas as letras)
+        texto_base_cat = "".join([c for c in nome_categoria if c.isalnum() or c.isspace()]).strip().lower()
+        
+        for r in interaction.guild.roles:
+            r_nome_limpo = "".join([c for c in r.name if c.isalnum() or c.isspace()]).strip().lower()
+            if texto_base_cat in r_nome_limpo or r_nome_limpo in texto_base_cat:
+                cargo_categoria = r
+                break
         
         # Lista de cargos a adicionar
         cargos_para_adicionar = [cargo_patente]
@@ -301,13 +303,11 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
 
-                # Garantir menção clicável para a categoria
+        # Garantir menção clicável para a categoria encontrada
         if cargo_categoria:
             texto_categoria = cargo_categoria.mention
         else:
             texto_categoria = nome_categoria
-            
-        
 
         # Resposta de Sucesso com menções corretas
         embed = discord.Embed(
@@ -326,7 +326,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot no Discord precisa de estar **ACIMA** das patentes na lista de Cargos do Servidor!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-        
+                                    
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
