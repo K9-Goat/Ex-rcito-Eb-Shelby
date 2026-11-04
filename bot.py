@@ -267,7 +267,6 @@ historico_cdp = {}
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
     await interaction.response.defer()
 
-    try:
         nome_cargo_novo = cargo_patente.name
         config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
         
