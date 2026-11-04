@@ -238,76 +238,77 @@ PATENTES_CONFIG = {
     "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "Oficiais Generais"},
 }
 
-
-
-    @bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
+@bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
-    # Adicionamos defer para evitar a mensagem "O aplicativo não respondeu"
+    # AVISA O DISCORD QUE O BOT ESTÁ A PROCESSAR (evita o timeout de 3s)
     await interaction.response.defer()
 
-    nome_cargo = cargo_patente.name
-    config = PATENTES_CONFIG.get(nome_cargo)
-    
-    if not config:
-        await interaction.followup.send(f"❌ O cargo {cargo_patente.mention} não é uma patente reconhecida pelo sistema de CDP.")
-        return
-
-    # Verificar CDP Atual antes de promover
-    agora = datetime.datetime.now()
-    if membro.id in historico_cdp:
-        liberacao = historico_cdp[membro.id]
-        if agora < liberacao:
-            restante = liberacao - agora
-            horas = restante.seconds // 3600
-            minutos = (restante.seconds % 3600) // 60
-            await interaction.followup.send(
-                f"🚫 **PROMOÇÃO BLOQUEADA!**\n{membro.mention} ainda está em CDP.\nFalta(m) **{restante.days}d {horas}h {minutos}m** para poder ser promovido novamente."
-            )
+    try:
+        nome_cargo = cargo_patente.name
+        config = PATENTES_CONFIG.get(nome_cargo)
+        
+        if not config:
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo}** não está registado na tabela de CDP.")
             return
 
-    # Buscar o cargo da Categoria no servidor
-    nome_categoria = config["categoria"]
-    cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
-    
-    # Adicionar Cargos ao Membro
-    cargos_para_adicionar = [cargo_patente]
-    if cargo_categoria:
-        cargos_para_adicionar.append(cargo_categoria)
+        # Verificar CDP
+        agora = datetime.datetime.now()
+        if membro.id in historico_cdp:
+            liberacao = historico_cdp[membro.id]
+            if agora < liberacao:
+                restante = liberacao - agora
+                horas = restante.seconds // 3600
+                minutos = (restante.seconds % 3600) // 60
+                await interaction.followup.send(
+                    f"🚫 **PROMOÇÃO BLOQUEADA!**\n{membro.mention} ainda está em CDP.\nFalta(m) **{restante.days}d {horas}h {minutos}m** para poder ser promovido novamente."
+                )
+                return
 
-    try:
+        # Procurar cargo de Categoria
+        nome_categoria = config["categoria"]
+        cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
+        
+        # Lista de cargos a adicionar
+        cargos_para_adicionar = [cargo_patente]
+        if cargo_categoria:
+            cargos_para_adicionar.append(cargo_categoria)
+
+        # Adiciona os cargos no servidor
         await membro.add_roles(*cargos_para_adicionar)
+
+        # Atualizar Apelido
+        tag = config["tag"]
+        nome_limpo = membro.display_name.split("]")[-1].strip()
+        novo_nick = f"{tag} {nome_limpo}"[:32]
+        
+        try:
+            await membro.edit(nick=novo_nick)
+        except Exception:
+            pass  # Ignora se não conseguir mudar o nick (ex: dono do servidor)
+
+        # Registar CDP
+        horas_cdp = config["horas"]
+        data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+        historico_cdp[membro.id] = data_liberacao
+
+        # Resposta de Sucesso
+        embed = discord.Embed(
+            title="📈 Promoção Realizada com Sucesso!",
+            description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {cargo_categoria.mention if cargo_categoria else nome_categoria}", inline=False)
+        embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
+        embed.add_field(name="🔓 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
+        embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
+
+        await interaction.followup.send(embed=embed)
+
     except discord.Forbidden:
-        await interaction.followup.send("❌ **Erro de Permissão:** O cargo do bot precisa estar acima das patentes na lista de cargos do Discord!")
-        return
-
-    # Atualizar Apelido (Nickname)
-    tag = config["tag"]
-    nome_limpo = membro.display_name.split("]")[-1].strip()
-    novo_nick = f"{tag} {nome_limpo}"[:32]
-    
-    try:
-        await membro.edit(nick=novo_nick)
-    except discord.Forbidden:
-        pass
-
-    # Registar nova CDP
-    horas_cdp = config["horas"]
-    data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
-    historico_cdp[membro.id] = data_liberacao
-
-    # Criar Embed de Confirmação
-    embed = discord.Embed(
-        title="📈 Promoção Realizada com Sucesso!",
-        description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
-        color=discord.Color.green()
-    )
-    embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {cargo_categoria.mention if cargo_categoria else nome_categoria}", inline=False)
-    embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
-    embed.add_field(name="🔓 Liberado para Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
-    embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
-
-    await interaction.followup.send(embed=embed)
-    
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot no Discord precisa de estar **ACIMA** das patentes na lista de Cargos do Servidor!")
+    except Exception as e:
+        await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
+         
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
