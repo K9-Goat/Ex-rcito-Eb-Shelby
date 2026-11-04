@@ -711,7 +711,18 @@ async def rebaixar_varios(
         
 
 
-# Inicia o servidor web de suporte e o bot
+@bot.event
+async def on_ready():
+    print(f"Bot ligado com sucesso como {bot.user}!")
+    try:
+        # Força o Discord a sincronizar e atualizar os comandos de barra
+        synced = await bot.tree.sync()
+        print(f"Comandos sincronizados: {len(synced)}")
+    except Exception as e:
+        print(f"Erro ao sincronizar comandos: {e}")
+
+# Mantém o servidor web ativo (se usares o keep_alive) e inicia o bot
 keep_alive()
 token = os.getenv("DISCORD_TOKEN")
 bot.run(token)
+
