@@ -393,7 +393,6 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
     await interaction.response.defer()
 
-    try:
         # 1. Verificar se o Autor tem um dos 5 cargos autorizados
         nivel_autor = 0
         for role in interaction.user.roles:
