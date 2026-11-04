@@ -275,25 +275,32 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
             return
 
-        # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
-        categoria_autor = None
-        nivel_autor = 0
+            # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
+    categoria_autor = None
+    nivel_autor = 0
 
-        # Procura nas tags do apelido do autor para identificar a patente/categoria dele
+    # Verificação de segurança: se fores Administrador ou General de Exército, nível máximo imediato!
+    if interaction.user.guild_permissions.administrator:
+           nivel_autor = 7
+    else:
+        # Procura nas tags do apelido do autor
         for nome_p, cfg in PATENTES_CONFIG.items():
             if cfg["tag"] in interaction.user.display_name:
                 categoria_autor = cfg["categoria"]
                 nivel_autor = HIERARQUIA_CATEGORIAS.get(categoria_autor, 0)
                 break
-
-        # Caso o autor não tenha tag no nick, verifica pelos cargos que possui no servidor
+        
+        # Se não encontrou pelo nick, verifica nos cargos reais do Discord do utilizador
         if nivel_autor == 0:
             for role in interaction.user.roles:
-                if role.name in HIERARQUIA_CATEGORIAS:
-                    categoria_autor = role.name
-                    nivel_autor = HIERARQUIA_CATEGORIAS[role.name]
+                if "General de Exército" in role.name or "[GEN EX]" in role.name:
+                    nivel_autor = 7
                     break
-
+                for cat_nome, cat_nivel in HIERARQUIA_CATEGORIAS.items():
+                    if role.name in cat_nome or cat_nome in role.name:
+                           if cat_nivel > nivel_autor:
+                            nivel_autor = cat_nivel
+                            
         # 2. Regras de Permissão por Categoria do Autor
         cat_destino = config_novo["categoria"]
         nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
