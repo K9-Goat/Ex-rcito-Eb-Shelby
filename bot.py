@@ -301,34 +301,42 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                             nivel_autor = cat_nivel
                             
                             
-        # 2. Regras de Permissão por Categoria do Autor
-        cat_destino = config_novo["categoria"]
-        nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
+            # Se não encontrou pelo nick, verifica nos cargos reais do Discord do utilizador
+    if nivel_autor == 0:
+        for role in interaction.user.roles:
+            if "General" in role.name or "[GEN-" in role.name or "[X] Oficiais Gerais" in role.name:
+                nivel_autor = 7
+                break
+            for cat_nome, cat_nivel in HIERARQUIA_CATEGORIAS.items():
+                if role.name in cat_nome or cat_nome in role.name:
+                    nivel_autor = cat_nivel
 
-        # Regra 1: Praças (1), Graduados (2) e Praças Especiais (3) não podem promover ninguém
-        if nivel_autor <= 3:
-            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
-            return
+    # 2. Regras de Permissão por Categoria de Autor
+    cat_destino = config_novo["categoria"]
+    nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
-        # Regra 2: Oficiais Subalternos (4) só promovem Praças (1)
-        elif nivel_autor == 4 and nivel_destino > 1:
-            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover **Praças**.")
-            return
+    # Regra 1: Praças (1), Graduados (2) e Praças Especiais (3) não podem promover ninguém
+    if nivel_autor <= 3:
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
+        return
 
-        # Regra 3: Oficiais Intermediários (5) promovem Praças (1) e Graduados (2)
-        elif nivel_autor == 5 and nivel_destino > 2:
-            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover **Praças e Graduados**.")
-            return
+    # Regra 2: Oficiais Subalternos (4) só podem promover Praças (1)
+    elif nivel_autor == 4 and nivel_destino > 1:
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.")
+        return
 
-        # Regra 4: Oficiais Superiores (6) promovem Praças (1), Graduados (2), Praças Especiais (3) e Subalternos (4)
-        elif nivel_autor == 6 and nivel_destino > 4:
-            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos deste nível.")
-            return
+    # Regra 3: Oficiais Intermediários (5) podem promover Praças (1), Graduados (2) e Praças Especiais (3)
+    elif nivel_autor == 5 and nivel_destino > 3:
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.")
+        return
 
-        # Regra 5: Generais (7) promovem todos, exceto patentes de nível igual ou superior ao seu
-        elif nivel_autor == 7 and nivel_destino >= 7:
-            await interaction.followup.send("🚫 **PROMOÇÃO NEGADA!** Generais não podem promover para cargos de nível General ou superior.")
-            return
+    # Regra 4: Oficiais Superiores (6) podem promover até Intermediários (5)
+    elif nivel_autor == 6 and nivel_destino > 5:
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos de Oficial Superior ou General.")
+        return
+        
+    # Nota: Generais (Nível 7) têm acesso total e passam direto por todas as restrições acima.
+        
 
         # 3. Verificar CDP do Alvo
         agora = datetime.datetime.now()
