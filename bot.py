@@ -315,6 +315,108 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
     
 
+@bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta a CDP.")
+async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
+    await interaction.response.defer()
+
+    try:
+        nome_cargo_novo = cargo_patente_nova.name
+        config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
+        
+        if not config_nova:
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
+            return
+
+        # 1. Identificar Patente e Categoria Antigas pelo Apelido do Membro
+        patente_antiga_nome = "Desconhecida"
+        config_antiga = None
+        cargo_patente_antigo = None
+        cargo_categoria_antigo = None
+
+        # Procurar qual tag de patente o membro possui atualmente no nick
+        for nome_p, cfg in PATENTES_CONFIG.items():
+            if cfg["tag"] in membro.display_name:
+                patente_antiga_nome = nome_p
+                config_antiga = cfg
+                cargo_patente_antigo = discord.utils.get(interaction.guild.roles, name=nome_p)
+                if cfg["categoria"]:
+                    cargo_categoria_antigo = discord.utils.get(interaction.guild.roles, name=cfg["categoria"])
+                break
+
+        # 2. Procurar Categoria Nova
+        nome_cat_nova = config_nova["categoria"]
+        cargo_cat_novo = discord.utils.get(interaction.guild.roles, name=nome_cat_nova)
+
+        # 3. Remover Cargos Antigos e Adicionar Novos
+        cargos_remover = []
+        if cargo_patente_antigo:
+            cargos_remover.append(cargo_patente_antigo)
+        # Só remove a categoria antiga se a pessoa mudar de categoria
+        if cargo_categoria_antigo and config_antiga and config_antiga["categoria"] != nome_cat_nova:
+            cargos_remover.append(cargo_categoria_antigo)
+
+        if cargos_remover:
+            try:
+                await membro.remove_roles(*cargos_remover)
+            except Exception:
+                pass
+
+        cargos_adicionar = [cargo_patente_nova]
+        if cargo_cat_novo:
+            cargos_adicionar.append(cargo_cat_novo)
+
+        await membro.add_roles(*cargos_adicionar)
+
+        # 4. Atualizar Apelido com a Nova Tag
+        tag_nova = config_nova["tag"]
+        nome_limpo = membro.display_name.split("]")[-1].strip()
+        novo_nick = f"{tag_nova} {nome_limpo}"[:32]
+
+        try:
+            await membro.edit(nick=novo_nick)
+        except Exception:
+            pass
+
+        # 5. Atualizar/Resetar CDP para o novo cargo
+        agora = datetime.datetime.now()
+        horas_cdp = config_nova["horas"]
+        data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+        historico_cdp[membro.id] = data_liberacao
+
+        # Formatação das menções/textos para o Embed
+        texto_patente_antiga = cargo_patente_antigo.mention if cargo_patente_antigo else patente_antiga_nome
+        texto_cat_antiga = cargo_categoria_antigo.mention if cargo_categoria_antigo else (config_antiga["categoria"] if config_antiga else "Sem Categoria")
+        texto_cat_nova = cargo_cat_novo.mention if cargo_cat_novo else nome_cat_nova
+
+        # 6. Embed de Sucesso
+        embed = discord.Embed(
+            title="🔻 Rebaixamento Realizado!",
+            description=f"O militar {membro.mention} foi rebaixado.",
+            color=discord.Color.red()
+        )
+        embed.add_field(
+            name="📊 Situação Anterior", 
+            value=f"• **Patente:** {texto_patente_antiga}\n• **Categoria:** {texto_cat_antiga}", 
+            inline=False
+        )
+        embed.add_field(
+            name="🎖️ Nova Situação", 
+            value=f"• **Patente:** {cargo_patente_nova.mention}\n• **Categoria:** {texto_cat_nova}", 
+            inline=False
+        )
+        embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
+        embed.add_field(name="🔓 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
+        embed.set_footer(text=f"Rebaixado por: {interaction.user.display_name}")
+
+        await interaction.followup.send(embed=embed)
+
+    except discord.Forbidden:
+        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos a remover/adicionar na lista do servidor!")
+    except Exception as e:
+        await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
+        
+
+
 # Inicia o servidor web de suporte e o bot
 keep_alive()
 token = os.getenv("DISCORD_TOKEN")
