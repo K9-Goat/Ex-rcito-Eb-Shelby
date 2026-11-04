@@ -147,25 +147,59 @@ async def on_member_update(before: discord.Member, after: discord.Member):
                 await after.edit(nick=nome_correto)
             except discord.Forbidden:
                 pass
-@bot.tree.command(name="hierarquia", description="Exibe a hierarquia oficial do Exército Brasileiro do Shelby.")
+@bot.tree.command(name="hierarquia", description="Exibe a hierarquia oficial e tabela de CDP do Exército do Shelby.")
 async def hierarquia(interaction: discord.Interaction):
     embed = discord.Embed(
-        title="🎖️ Hierarquia Oficial - Exército do Shelby",
-        description="Conheça a escala de patentes da nossa instituição militar:",
+        title="🎖️ Hierarquia Oficial & CDP - Exército do Shelby",
+        description="Escala de patentes e tempo de capacitação exigido:",
         color=discord.Color.gold()
     )
+    
     embed.add_field(
-        name="⭐ Oficiais",
-        value="• General\n• Coronel\n• Tenente-Coronel\n• Major\n• Capitão\n• 1º Tenente\n• 2º Tenente\n• Aspirante a Oficial",
+        name="⭐ Oficiais Gerais",
+        value="• `[GEN EX]` General de Exército – 85 horas\n• `[GEN DV]` General de Divisão – 80 horas\n• `[GEN BDA]` General de Brigada – 75 horas",
         inline=False
     )
+    
     embed.add_field(
-        name="🎖️ Praças e Graduados",
-        value="• Subtenente\n• 1º Sargento\n• 2º Sargento\n• 3º Sargento\n• Cabo\n• Soldado",
+        name="⭐ Oficiais Superiores",
+        value="• `[CEL]` Coronel – 70 horas\n• `[TEN-CEL]` Tenente Coronel – 65 horas\n• `[MAJ]` Major – 60 horas",
         inline=False
     )
+    
+    embed.add_field(
+        name="⭐ Oficiais Intermediários",
+        value="• `[CAP]` Capitão – 55 horas",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="⭐ Oficiais Subalternos",
+        value="• `[1º TEN]` Primeiro Tenente – 50 horas\n• `[2º TEN]` Segundo Tenente – 45 horas\n• `[AAO]` Aspirante a Oficial – 40 horas",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🛡️ Praças Especiais",
+        value="• `[CT]` Cadete – 35 horas",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🎖️ Graduados",
+        value="• `[ST]` Subtenente – 30 horas\n• `[1º SGT]` Primeiro Sargento – 25 horas\n• `[2º SGT]` Segundo Sargento – 20 horas\n• `[3º SGT]` Terceiro Sargento – 15 horas",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="🎖️ Praças",
+        value="• `[CB]` Cabo – 12 horas\n• `[SLD]` Soldado – 6 horas\n• `[REC]` Recruta – 3 horas",
+        inline=False
+    )
+    
     embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Gestão")
     await interaction.response.send_message(embed=embed)
+    
 
 
 # Dicionário temporário para guardar a data em que cada membro foi promovido por ID
