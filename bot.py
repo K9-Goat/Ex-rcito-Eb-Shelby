@@ -203,7 +203,6 @@ async def hierarquia(interaction: discord.Interaction):
     
 
 
-
     # Mapeamento do Nível de Autoridade (quanto maior o número, maior a autoridade)
 HIERARQUIA_CATEGORIAS = {
     "〘🌾轮  Militares Praças": 1,
@@ -214,6 +213,7 @@ HIERARQUIA_CATEGORIAS = {
     "〘🏅轮Oficiais Superiores": 6,
     "〘⚔️轮Oficiais Generais": 7,
 }
+
 
     # Tabela de permissão exclusiva para rebaixar (quanto maior o número, maior o poder)
 CARGOS_REBAIXAR_PERMISSAO = {
