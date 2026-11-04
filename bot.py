@@ -708,7 +708,17 @@ async def rebaixar_varios(
         await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos na lista do servidor!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
+
+@bot.tree.command(name="sincroniza-comandos", description="Força a sincronização de todos os comandos no servidor.")
+async def sincroniza_comandos(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+    try:
+        synced = await bot.tree.sync(guild=interaction.guild)
+        await interaction.followup.send(f"✅ Sincronizado com sucesso! Total de comandos ativos: **{len(synced)}**.")
+    except Exception as e:
+        await interaction.followup.send(f"❌ Erro ao sincronizar: `{e}`")
         
+
 
 
 @bot.event
