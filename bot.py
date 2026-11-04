@@ -203,39 +203,39 @@ async def hierarquia(interaction: discord.Interaction):
     
 
 
-# Tabela de Patentes com Horas de CDP, Tag do Nick e Nome do Cargo de Categoria
+# Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
 PATENTES_CONFIG = {
     # Praças
-    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "Militares Praças"},
-    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "Militares Praças"},
-    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "Militares Praças"},
+    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "🌾 Militares Praças"},
+    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "🌾 Militares Praças"},
+    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "🌾 Militares Praças"},
     
     # Graduados
-    "[T-SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3º SGT]", "categoria": "Militares Graduados"},
-    "[S-SGT] Segundo-Sargento": {"horas": 20, "tag": "[2º SGT]", "categoria": "Militares Graduados"},
-    "[P-SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1º SGT]", "categoria": "Militares Graduados"},
-    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "Militares Graduados"},
+    "[T-SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3º SGT]", "categoria": "🎓 Militares Graduados"},
+    "[S-SGT] Segundo-Sargento": {"horas": 20, "tag": "[2º SGT]", "categoria": "🎓 Militares Graduados"},
+    "[P-SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1º SGT]", "categoria": "🎓 Militares Graduados"},
+    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "🎓 Militares Graduados"},
     
     # Praças Especiais
-    "[CDT] Cadete": {"horas": 35, "tag": "[CT]", "categoria": "Praças Especiais"},
+    "[CDT] Cadete": {"horas": 35, "tag": "[CT]", "categoria": "🪖 Praças Especiais"},
     
     # Oficiais Subalternos
-    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "Oficiais Subalternos"},
-    "[S-TN] Segundo-Tenente": {"horas": 45, "tag": "[2º TEN]", "categoria": "Oficiais Subalternos"},
-    "[P-TN] Primeiro-Tenente": {"horas": 50, "tag": "[1º TEN]", "categoria": "Oficiais Subalternos"},
+    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "🗡️ Oficiais Subalternos"},
+    "[S-TN] Segundo-Tenente": {"horas": 45, "tag": "[2º TEN]", "categoria": "🗡️ Oficiais Subalternos"},
+    "[P-TN] Primeiro-Tenente": {"horas": 50, "tag": "[1º TEN]", "categoria": "🗡️ Oficiais Subalternos"},
     
     # Oficiais Intermediários
-    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "Oficiais Intermediário"},
+    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "⭐ Oficiais Intermediário"},
     
     # Oficiais Superiores
-    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "Oficiais Superiores"},
-    "[TN-COL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "Oficiais Superiores"},
-    "[COL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "Oficiais Superiores"},
+    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "🏅 Oficiais Superiores"},
+    "[TN-COL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "🏅 Oficiais Superiores"},
+    "[COL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "🏅 Oficiais Superiores"},
     
     # Oficiais Generais
-    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "Oficiais Generais"},
-    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "Oficiais Generais"},
-    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "Oficiais Generais"},
+    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "⚔️ Oficiais Gerais"},
+    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "⚔️ Oficiais Gerais"},
+    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "⚔️ Oficiais Gerais"},
 }
 
 # Guarda o histórico de CDP dos membros em memória
