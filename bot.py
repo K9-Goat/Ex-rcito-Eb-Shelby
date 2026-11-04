@@ -267,11 +267,11 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 )
                 return
 
-        # Procurar o cargo da Categoria de forma flexível (procura por parte do nome se necessário)
+        # Procurar o cargo da Categoria (com suporte a emojis)
         nome_categoria = config["categoria"]
         cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
         
-        # Se não encontrar pelo nome exato com emoji, tenta procurar apenas pelo nome principal (ex: "Militares Praças")
+        # Se não encontrar pelo nome exato, procura por parte do nome
         if not cargo_categoria:
             for r in interaction.guild.roles:
                 if nome_categoria.lower() in r.name.lower():
@@ -301,10 +301,15 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
 
-        # Definir texto da categoria para o Embed (com menção se encontrar, ou texto normal se não encontrar)
-        texto_categoria = cargo_categoria.mention if cargo_categoria else nome_categoria
+                # Garantir menção clicável para a categoria
+        if cargo_categoria:
+            texto_categoria = cargo_categoria.mention
+        else:
+            texto_categoria = nome_categoria
+            
+        
 
-        # Resposta de Sucesso
+        # Resposta de Sucesso com menções corretas
         embed = discord.Embed(
             title="📈 Promoção Realizada com Sucesso!",
             description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
@@ -322,7 +327,6 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
         
-
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
