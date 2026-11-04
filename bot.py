@@ -238,6 +238,10 @@ PATENTES_CONFIG = {
     "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "Oficiais Generais"},
 }
 
+# Guarda o histórico de CDP dos membros em memória
+historico_cdp = {}
+
+
 @bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
     # AVISA O DISCORD QUE O BOT ESTÁ A PROCESSAR (evita o timeout de 3s)
