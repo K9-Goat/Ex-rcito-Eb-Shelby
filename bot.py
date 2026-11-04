@@ -382,11 +382,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
 
         await interaction.followup.send(embed=embed)
 
-    except discord.Forbidden:
-        await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot precisa de estar **ACIMA** dos cargos a gerir na hierarquia!")
-    except Exception as e:
-        await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-            
+    
 
 @bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta a CDP.")
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
