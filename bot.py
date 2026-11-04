@@ -726,16 +726,12 @@ async def on_ready():
     try:
         MEU_SERVIDOR = discord.Object(id=155569528807568122)
         
-        # 1. Limpa quaisquer comandos globais antigos que estejam a causar duplicação
-        bot.tree.clear_commands(guild=None)
-        await bot.tree.sync()
-        
-        # 2. Sincroniza limpo apenas no teu servidor para aparecerem instantaneamente
-        bot.tree.copy_global_to(guild=MEU_SERVIDOR)
+        # Sincroniza diretamente todos os comandos do bot no teu servidor de forma limpa
         synced = await bot.tree.sync(guild=MEU_SERVIDOR)
-        print(f"Comandos sincronizados sem duplicações: {len(synced)}")
+        print(f"Comandos sincronizados com sucesso no servidor: {len(synced)}")
     except Exception as e:
-        print(f"Erro ao sincronizar: {e}")
+        print(f"Erro ao sincronizar comandos: {e}")
+        
         
 
 # Mantém o servidor web ativo e inicia o bot
