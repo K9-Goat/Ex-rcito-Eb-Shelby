@@ -241,10 +241,9 @@ PATENTES_CONFIG = {
 # Guarda o histórico de CDP dos membros em memória
 historico_cdp = {}
 
-
 @bot.tree.command(name="promover", description="Promove um militar, atribui os cargos automaticamente e ativa a CDP.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
-    # AVISA O DISCORD QUE O BOT ESTÁ A PROCESSAR (evita o timeout de 3s)
+    # AVISA O DISCORD QUE O BOT ESTÁ A PROCESSAR
     await interaction.response.defer()
 
     try:
@@ -268,9 +267,16 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 )
                 return
 
-        # Procurar cargo de Categoria
+        # Procurar o cargo da Categoria de forma flexível (procura por parte do nome se necessário)
         nome_categoria = config["categoria"]
         cargo_categoria = discord.utils.get(interaction.guild.roles, name=nome_categoria)
+        
+        # Se não encontrar pelo nome exato com emoji, tenta procurar apenas pelo nome principal (ex: "Militares Praças")
+        if not cargo_categoria:
+            for r in interaction.guild.roles:
+                if nome_categoria.lower() in r.name.lower():
+                    cargo_categoria = r
+                    break
         
         # Lista de cargos a adicionar
         cargos_para_adicionar = [cargo_patente]
@@ -288,12 +294,15 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         try:
             await membro.edit(nick=novo_nick)
         except Exception:
-            pass  # Ignora se não conseguir mudar o nick (ex: dono do servidor)
+            pass
 
         # Registar CDP
         horas_cdp = config["horas"]
         data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
         historico_cdp[membro.id] = data_liberacao
+
+        # Definir texto da categoria para o Embed (com menção se encontrar, ou texto normal se não encontrar)
+        texto_categoria = cargo_categoria.mention if cargo_categoria else nome_categoria
 
         # Resposta de Sucesso
         embed = discord.Embed(
@@ -301,8 +310,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
             description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
             color=discord.Color.green()
         )
-       
-        embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {cargo_categoria.mention if cargo_categoria else nome_categoria}", inline=False)
+        embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {texto_categoria}", inline=False)
         embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
         embed.add_field(name="🔓 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
         embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
@@ -313,7 +321,8 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send("❌ **Erro de Permissões:** O cargo do Bot no Discord precisa de estar **ACIMA** das patentes na lista de Cargos do Servidor!")
     except Exception as e:
         await interaction.followup.send(f"❌ **Ocorreu um erro interno:** `{e}`")
-         
+        
+
 
 # Inicia o servidor web de suporte e o bot
 keep_alive()
