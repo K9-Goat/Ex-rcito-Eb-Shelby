@@ -1,9 +1,7 @@
 import datetime
 import discord
 from discord import app_commands
-import datetime
 import os
-import discord
 from discord import app_commands
 from discord.ext import commands
 import requests
@@ -203,46 +201,6 @@ async def hierarquia(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Gestão")
     await interaction.response.send_message(embed=embed)
     
-
-
-# Dicionário temporário para guardar a data em que cada membro foi promovido por ID
-historico_promocoes = {}
-
-@bot.tree.command(name="promover", description="Regista a promoção de um militar e aplica a CDP.")
-async def promover(interaction: discord.Interaction, membro: discord.Member, nova_patente: str, dias_cdp: int = 7):
-    # Regista a data atual e calcula quando termina a CDP
-    data_promocao = datetime.datetime.now()
-    data_liberacao = data_promocao + datetime.timedelta(days=dias_cdp)
-    
-    # Guarda no dicionário (ID do membro -> data de liberação)
-    historico_promocoes[membro.id] = data_liberacao
-    
-    embed = discord.Embed(
-        title="📈 Promoção Registada com Sucesso!",
-        description=f"O militar {membro.mention} foi promovido a **{nova_patente}**!",
-        color=discord.Color.green()
-    )
-    embed.add_field(name="⏳ Fim da CDP (Próxima Promoção)", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
-    embed.set_footer(text=f"Ação executada por {interaction.user.name}")
-    
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="ver_cdp", description="Verifica se um militar já cumpriu a CDP e pode ser promovido.")
-async def ver_cdp(interaction: discord.Interaction, membro: discord.Member):
-    if membro.id not in historico_promocoes:
-        await interaction.response.send_message(f"✅ {membro.mention} não tem registo de CDP ativa. **Apto para promoção!**", ephemeral=True)
-        return
-        
-    data_liberacao = historico_promocoes[membro.id]
-    agora = datetime.datetime.now()
-    
-    if agora >= data_liberacao:
-        await interaction.response.send_message(f"✅ O período de CDP de {membro.mention} terminou! **Já pode ser promovido.**", ephemeral=True)
-    else:
-        restante = data_liberacao - agora
-        dias = restante.days
-        horas = restante.seconds // 3600
-        await interaction.response.send_message(f"⏳ {membro.mention} ainda está em CDP. Falta(m) **{dias} dia(s) e {horas} hora(s)** para poder ser promovido.", ephemeral=True)
 
 
 # Tabela de Patentes com Horas de CDP, Tag do Nick e Nome do Cargo de Categoria
