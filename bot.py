@@ -582,8 +582,11 @@ class SeletorTreinosView(discord.ui.View):
 # --- COMANDO: /ping_treinos ---
 @bot.tree.command(name="ping_treinos", description="Envia o painel de seleção de pings de treinamentos.")
 async def ping_treinos(interaction: discord.Interaction):
+    # Responde imediatamente ao Discord para evitar qualquer timeout/erro
+    await interaction.response.defer(ephemeral=True)
+
     if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
+        await interaction.followup.send("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
         return
 
     embed = discord.Embed(
@@ -605,8 +608,13 @@ async def ping_treinos(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro • Sistema de Notificações")
 
     view = SeletorTreinosView()
-    # Envia imediatamente a resposta visível para todos no canal
-    await interaction.response.send_message(embed=embed, view=view)
+    
+    # Envia o embed com o menu diretamente para o canal público
+    await interaction.channel.send(embed=embed, view=view)
+    
+    # Confirma em privado para ti que foi enviado com sucesso
+    await interaction.followup.send("✅ Painel de pings enviado com sucesso para o canal!", ephemeral=True)
+    
     
     
 
