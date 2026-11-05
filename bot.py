@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # --- HIERARQUIA E PATENTES ---
 HIERARQUIA_CATEGORIAS = {
-    "〘🌾〙  Militares Praças": 1,
+    "Libraries🌾　  Militares Praças": 1,
     "〘🎓〙 Militares Graduados": 2,
     "〘🪖〙 Praças Especiais": 3,
     "〘🗡️〙Oficiais Subalternos": 4,
@@ -64,15 +64,21 @@ PATENTES_CONFIG = {
 
 historico_cdp = {}
 
+# --- EVENTO ON_READY (LIMPEZA TOTAL DE COMANDOS DUPLICADOS) ---
 @bot.event
 async def on_ready():
     try:
-        # Limpa e sincroniza de forma limpa em cada servidor para evitar duplicados
+        # Limpa todos os comandos globais acumulados na API
+        bot.tree.clear_commands(guild=None)
+        await bot.tree.sync(guild=None)
+
+        # Registra e sincroniza a arvore limpa em cada servidor
         for guild in bot.guilds:
             bot.tree.clear_commands(guild=guild)
             bot.tree.copy_global_to(guild=guild)
             await bot.tree.sync(guild=guild)
-        print(f"Bot online e totalmente sincronizado como {bot.user}")
+            
+        print(f"✅ Todos os comandos duplicados foram eliminados. Bot online como {bot.user}")
     except Exception as e:
         print(f"Erro ao sincronizar comandos: {e}")
 
@@ -445,7 +451,7 @@ async def hierarquia(interaction: discord.Interaction):
 async def regras(interaction: discord.Interaction):
     embed_principal = discord.Embed(
         title="📜 MANUAL DE DIRETRIZES E REGRAS - EXÉRCITO",
-        description="O cumprimento rigoroso destas normas é obrigatório para todos os militares e membros do servidor. A ignorância das regras não exime o infrator de punição.",
+        description="O cumprimento rigoroso destas normas é obrigatório para todos os militares. A ignorância das regras não exime o infrator de punição.",
         color=discord.Color.dark_red()
     )
 
@@ -453,7 +459,7 @@ async def regras(interaction: discord.Interaction):
         name="🛡️ 1. Conduta e Respeito Geral",
         value=(
             "• **1.1** Respeite todos os membros, independente de patente ou cargo.\n"
-            "• **1.2** É estritamente proibido qualquer tipo de ofensa, preconceito, racismo, toxicidade ou assédio.\n"
+            "• **1.2** É estritamente proibido qualquer tipo de ofensa, preconceito, racismo ou toxicidade.\n"
             "• **1.3** Mantenha um ambiente saudável e focado na disciplina militar."
         ),
         inline=False
@@ -463,8 +469,8 @@ async def regras(interaction: discord.Interaction):
         name="⭐ 2. Hierarquia e Disciplina",
         value=(
             "• **2.1** Ordens de superiores devem ser cumpridas prontamente, dentro do bom senso.\n"
-            "• **2.2** O desrespeito à cadeia de comando e a superiores resultará em punição severa ou rebaixamento.\n"
-            "• **2.3** Pedidos de promoção devem seguir os critérios oficiais e prazos de CDP estabelecidos."
+            "• **2.2** O desrespeito à cadeia de comando resultará em punição severa ou rebaixamento.\n"
+            "• **2.3** Pedidos de promoção devem seguir os critérios oficiais e prazos de CDP."
         ),
         inline=False
     )
@@ -472,10 +478,10 @@ async def regras(interaction: discord.Interaction):
     embed_principal.add_field(
         name="🎯 3. Treinamentos e Eventos",
         value=(
-            "• **3.1** Respeite os instrutores e superiores durante os treinamentos.\n"
-            "• **3.2** Não interrompa instruções sem extrema necessidade.\n"
-            "• **3.3** Compareça aos eventos após confirmar presença e avise a liderança em caso de imprevistos.\n"
-            "• **3.4** É proibido atrapalhar intencionalmente as atividades ou manobras."
+            "• **3.1** Respeite os instrutores durante os treinamentos.\n"
+            "• **3.2** Não interrompa instruções sem necessidade.\n"
+            "• **3.3** Compareça aos eventos após confirmar presença e avise a liderança se não puder.\n"
+            "• **3.4** É proibido atrapalhar intencionalmente as atividades."
         ),
         inline=False
     )
@@ -484,19 +490,15 @@ async def regras(interaction: discord.Interaction):
         name="💬 4. Regras de Canais e Voz",
         value=(
             "• **4.1** Utilize cada canal estritamente para a sua devida finalidade.\n"
-            "• **4.2** Evite gritos, barulhos excessivos ou spam de voz nos canais de atendimento e reuniões.\n"
-            "• **4.3** Não envie mensagens repetidas (flood) nem faça marcações desnecessárias de cargos ou membros.\n"
-            "• **4.4** Proibido o envio de links suspeitos, vírus ou qualquer tipo de divulgação não autorizada."
+            "• **4.2** Evite gritos ou barulhos excessivos nos canais de voz.\n"
+            "• **4.3** Não envie mensagens repetidas (flood) nem marque cargos/membros sem necessidade.\n"
+            "• **4.4** Proibido enviar links suspeitos ou fazer divulgação não autorizada."
         ),
         inline=False
     )
 
     embed_principal.set_footer(text="Exército Brasileiro • Sistema Oficial de Normas e Conduta")
-    
     await interaction.response.send_message(embed=embed_principal)
-    
-
-
 
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
