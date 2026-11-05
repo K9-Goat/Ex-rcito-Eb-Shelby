@@ -548,7 +548,7 @@ async def dicas_gramaticais(interaction: discord.Interaction):
 # --- CLASSE DO MENU SELETOR DE CARGOS DE TREINO ---
 class SeletorTreinosView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None) # Sem limite de tempo para continuar a funcionar sempre
+        super().__init__(timeout=None)
 
     @discord.ui.select(
         placeholder="Selecione os pings de treino que deseja receber...",
@@ -568,22 +568,20 @@ class SeletorTreinosView(discord.ui.View):
         cargo = discord.utils.get(interaction.guild.roles, name=nome_cargo)
 
         if not cargo:
-            await interaction.response.send_message(f"❌ O cargo **{nome_cargo}** não foi encontrado no servidor. Verifique com a administração.", ephemeral=True)
+            await interaction.response.send_message(f"❌ O cargo **{nome_cargo}** não foi encontrado no servidor.", ephemeral=True)
             return
 
-        # Adiciona o cargo se não tiver, ou remove se já tiver
         if cargo in interaction.user.roles:
             await interaction.user.remove_roles(cargo)
-            await interaction.response.send_message(f"🔴 O cargo **{cargo.name}** foi removido de você com sucesso!", ephemeral=True)
+            await interaction.response.send_message(f"🔴 O cargo **{cargo.name}** foi removido de você!", ephemeral=True)
         else:
             await interaction.user.add_roles(cargo)
-            await interaction.response.send_message(f"🟢 O cargo **{cargo.name}** foi adicionado a você com sucesso!", ephemeral=True)
+            await interaction.response.send_message(f"🟢 O cargo **{cargo.name}** foi adicionado a você!", ephemeral=True)
 
 
-# --- 10. COMANDO: /ping_treinos ---
+# --- COMANDO: /ping_treinos ---
 @bot.tree.command(name="ping_treinos", description="Envia o painel de seleção de pings de treinamentos.")
 async def ping_treinos(interaction: discord.Interaction):
-    # Apenas administradores ou oficiais superiores/generais podem mandar o painel
     if not interaction.user.guild_permissions.administrator:
         await interaction.response.send_message("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
         return
@@ -607,8 +605,9 @@ async def ping_treinos(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro • Sistema de Notificações")
 
     view = SeletorTreinosView()
-    await interaction.channel.send(embed=embed, view=view)
-    await interaction.response.send_message("✅ Painel de pings enviado com sucesso!", ephemeral=True)
+    
+    # Responde imediatamente no canal com o embed e o menu
+    await interaction.response.send_message(embed=embed, view=view)
     
 
 
