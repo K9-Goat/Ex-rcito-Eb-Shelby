@@ -555,35 +555,39 @@ class SeletorTreinosView(discord.ui.View):
         min_values=1,
         max_values=1,
         options=[
-            discord.SelectOption(label="Treinos-Praças", emoji="🌾", description="Receber avisos de treinamentos de Praças"),
-            discord.SelectOption(label="Treinos-Graduados", emoji="🎓", description="Receber avisos de treinamentos de Graduados"),
-            discord.SelectOption(label="Treinos-Subalternos", emoji="🗡️", description="Receber avisos de treinamentos de Subalternos"),
-            discord.SelectOption(label="Treinos-Intermediários", emoji="⭐️", description="Receber avisos de treinamentos de Intermediários"),
-            discord.SelectOption(label="Treinos-Superiores", emoji="🏅", description="Receber avisos de treinamentos de Superiores"),
-            discord.SelectOption(label="Treinos-Generais", emoji="⚔️", description="Receber avisos de treinamentos de Generais"),
+            discord.SelectOption(label="Treinos-Praças", emoji="🌾", description="Avisos de treinamentos de Praças"),
+            discord.SelectOption(label="Treinos-Graduados", emoji="🎓", description="Avisos de treinamentos de Graduados"),
+            discord.SelectOption(label="Treinos-Subalternos", emoji="🗡️", description="Avisos de treinamentos de Subalternos"),
+            discord.SelectOption(label="Treinos-Intermediários", emoji="⭐️", description="Avisos de treinamentos de Intermediários"),
+            discord.SelectOption(label="Treinos-Superiores", emoji="🏅", description="Avisos de treinamentos de Superiores"),
+            discord.SelectOption(label="Treinos-Generais", emoji="⚔️", description="Avisos de treinamentos de Generais"),
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
+        await interaction.response.defer(ephemeral=True)
         nome_cargo = select.values[0]
         cargo = discord.utils.get(interaction.guild.roles, name=nome_cargo)
 
         if not cargo:
-            await interaction.response.send_message(f"❌ O cargo **{nome_cargo}** não foi encontrado no servidor.", ephemeral=True)
+            await interaction.followup.send(f"❌ O cargo **{nome_cargo}** não foi encontrado no servidor.", ephemeral=True)
             return
 
         if cargo in interaction.user.roles:
             await interaction.user.remove_roles(cargo)
-            await interaction.response.send_message(f"🔴 O cargo **{cargo.name}** foi removido de você!", ephemeral=True)
+            await interaction.followup.send(f"🔴 O cargo **{cargo.name}** foi removido de você!", ephemeral=True)
         else:
             await interaction.user.add_roles(cargo)
-            await interaction.response.send_message(f"🟢 O cargo **{cargo.name}** foi adicionado a você!", ephemeral=True)
+            await interaction.followup.send(f"🟢 O cargo **{cargo.name}** foi adicionado a você!", ephemeral=True)
 
 
-# --- COMANDO: /ping_treinos ---
+# --- 10. COMANDO: /ping_treinos ---
 @bot.tree.command(name="ping_treinos", description="Envia o painel de seleção de pings de treinamentos.")
 async def ping_treinos(interaction: discord.Interaction):
+    # Avisa a API do Discord imediatamente para evitar o "O aplicativo não respondeu"
+    await interaction.response.defer()
+
     if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
+        await interaction.followup.send("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
         return
 
     embed = discord.Embed(
@@ -605,11 +609,8 @@ async def ping_treinos(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro • Sistema de Notificações")
 
     view = SeletorTreinosView()
+    await interaction.followup.send(embed=embed, view=view)
     
-    # Responde imediatamente no canal com o embed e o menu
-    await interaction.response.send_message(embed=embed, view=view)
-    
-
 
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
