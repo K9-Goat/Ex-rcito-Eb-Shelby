@@ -269,27 +269,23 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
 
     nome_cargo_novo = cargo_patente.name
     config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
-    
+
     if not config_novo:
-        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
+        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registrado na tabela de CDP.")
         return
 
-                    # 1. Identificar a Categoria do Autor da Promoção
-    nivel_autor = 0
-
-        # 7. Identificar a Categoria do Autor da Promoção
+    # 1. Identificar a Categoria do Autor da Promoção
     nivel_autor = 0
 
     if interaction.user.guild_permissions.administrator:
         nivel_autor = 7
     else:
         for role in interaction.user.roles:
-            # Verifica se é General ou Oficial General por qualquer variação do nome ou emoji
             if any(termo in role.name for termo in ["General", "[GEN-", "Oficiais Gerais", "⚔️"]):
                 nivel_autor = max(nivel_autor, 7)
             elif "🏅" in role.name or "Superiores" in role.name:
                 nivel_autor = max(nivel_autor, 6)
-            elif "⭐️" in role.name or "Intermediário" in role.name or "Intermediarios" in role.name:
+            elif "⭐️" in role.name or "Intermediário" in role.name:
                 nivel_autor = max(nivel_autor, 5)
             elif "🗡️" in role.name or "Subalternos" in role.name:
                 nivel_autor = max(nivel_autor, 4)
@@ -299,86 +295,76 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                 nivel_autor = max(nivel_autor, 2)
             elif "🌾" in role.name or "Praças" in role.name:
                 nivel_autor = max(nivel_autor, 1)
-                
-                
+
     # 2. Regras de Permissão por Categoria de Autor
     cat_destino = config_novo["categoria"]
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
-    # Regra 1: Praças (1), Graduados (2) e Praças Especiais (3) não podem promover ninguém
     if nivel_autor <= 3:
         await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
         return
-
-    # Regra 2: Oficiais Subalternos (4) só podem promover Praças (1)
     elif nivel_autor == 4 and nivel_destino > 1:
         await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.")
         return
-
-    # Regra 3: Oficiais Intermediários (5) podem promover Praças (1), Graduados (2) e Praças Especiais (3)
     elif nivel_autor == 5 and nivel_destino > 3:
         await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.")
         return
-
-    # Regra 4: Oficiais Superiores (6) podem promover até Intermediários (5)
     elif nivel_autor == 6 and nivel_destino > 5:
         await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos de Oficial Superior ou General.")
         return
-        
-    # Nota: Generais (Nível 7) têm acesso total e passam direto por todas as restrições acima.
-        
 
-        # 3. Verificar CDP do Alvo
-        agora = datetime.datetime.now()
-        if membro.id in historico_cdp:
-            liberacao = historico_cdp[membro.id]
-            if agora < liberacao:
-                restante = liberacao - agora
-                horas = restante.seconds // 3600
-                minutos = (restante.seconds % 3600) // 60
-                await interaction.followup.send(
-                    f"🚫 **PROMOÇÃO BLOQUEADA!**\n{membro.mention} ainda está em CDP.\nFalta(m) **{restante.days}d {horas}h {minutos}m** para poder ser promovido novamente."
-                )
-                return
+    # 3. Verificar CDP do Alvo
+    agora = datetime.datetime.now()
+    if membro.id in historico_cdp:
+        liberacao = historico_cdp[membro.id]
+        if agora < liberacao:
+            restante = liberacao - agora
+            horas = restante.seconds // 3600
+            minutos = (restante.seconds % 3600) // 60
+            await interaction.followup.send(
+                f"❌ **PROMOÇÃO BLOQUEADA!** {membro.mention} ainda está em CDP. Falta(m) **{restante.days}d {horas}h {minutos}m**."
+            )
+            return
 
-        # 4. Processar Troca de Cargos
-        cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
-        
-        cargos_para_adicionar = [cargo_patente]
-        if cargo_categoria:
-            cargos_para_adicionar.append(cargo_categoria)
+    # 4. Processar Troca de Cargos
+    cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
 
-        await membro.add_roles(*cargos_para_adicionar)
+    cargos_para_adicionar = [cargo_patente]
+    if cargo_categoria:
+        cargos_para_adicionar.append(cargo_categoria)
 
-        # Atualizar Apelido
-        tag = config_novo["tag"]
-        nome_limpo = membro.display_name.split("]")[-1].strip()
-        novo_nick = f"{tag} {nome_limpo}"[:32]
-        
-        try:
-            await membro.edit(nick=novo_nick)
-        except Exception:
-            pass
+    await membro.add_roles(*cargos_para_adicionar)
 
-        # Registar CDP
-        horas_cdp = config_novo["horas"]
-        data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
-        historico_cdp[membro.id] = data_liberacao
+    # Atualizar Apelido
+    tag = config_novo["tag"]
+    nome_limpo = membro.display_name.split("]")[-1].strip()
+    novo_nick = f"{tag} {nome_limpo}"[:32]
 
-        # Formatação do Embed
-        texto_categoria = cargo_categoria.mention if cargo_categoria else cat_destino
+    try:
+        await membro.edit(nick=novo_nick)
+    except Exception:
+        pass
 
-        embed = discord.Embed(
-            title="📈 Promoção Realizada com Sucesso!",
-            description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
-            color=discord.Color.green()
-        )
-        embed.add_field(name="🎖️ Cargos Atribuídos", value=f"• {cargo_patente.mention}\n• {texto_categoria}", inline=False)
-        embed.add_field(name="⏳ Duração da CDP", value=f"**{horas_cdp} Horas**", inline=True)
-        embed.add_field(name="🔓 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=False)
-        embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
+    # Registar CDP
+    horas_cdp = config_novo["horas"]
+    data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
+    historico_cdp[membro.id] = data_liberacao
 
-        await interaction.followup.send(embed=embed)
+    # Formatação de Embed
+    texto_categoria = cargo_categoria.mention if cargo_categoria else cat_destino
+
+    embed = discord.Embed(
+        title="🏆 Promoção Realizada com Sucesso!",
+        description=f"O militar {membro.mention} foi promovido a **{cargo_patente.name}**!",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="📌 Cargos Atribuídos", value=f"{cargo_patente.mention}\n{texto_categoria}", inline=False)
+    embed.add_field(name="⏳ Duração da CDP", value=f"{horas_cdp} Horas", inline=True)
+    embed.add_field(name="🕒 Próxima Promoção", value=data_liberacao.strftime('%d/%m/%Y às %H:%M'), inline=True)
+    embed.set_footer(text=f"Promovido por {interaction.user.display_name}")
+
+    await interaction.followup.send(embed=embed)
+    
 
     
 
