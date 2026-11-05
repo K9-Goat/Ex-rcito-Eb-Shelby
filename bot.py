@@ -3,63 +3,63 @@ from discord.ext import commands
 import datetime
 import os
 import re
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Mapeamento do Nível de Autoridade (quanto maior o número, maior a autoridade)
+# --- CONFIGURAÇÕES DE HIERARQUIA E PATENTES ---
 HIERARQUIA_CATEGORIAS = {
-    " continental🌾 continental  Militares Praças": 1,
-    " continental🎓 continental Militares Graduados": 2,
-    " continental🪖 continental Praças Especiais": 3,
-    " continental🗡️ continentalOficiais Subalternos": 4,
-    " continental⭐️ continentalOficiais Intermediário": 5,
-    " continental🏅 continentalOficiais Superiores": 6,
-    " continental⚔️ continentalOficiais Generais": 7,
+    "〘🌾〙  Militares Praças": 1,
+    "〘🎓〙 Militares Graduados": 2,
+    "〘🪖〙 Praças Especiais": 3,
+    "〘🗡️〙Oficiais Subalternos": 4,
+    "〘⭐️〙Oficiais Intermediário": 5,
+    "〘🏅〙Oficiais Superiores": 6,
+    "〘⚔️〙Oficiais Generais": 7,
 }
 
-# Tabela de permissão exclusiva para rebaixar
 CARGOS_REBAIXAR_PERMISSAO = {
-    " continental⚖️ continental Secretaria-Geral do Exército": 1,
+    "〘⚖️〙 Secretaria-Geral do Exército": 1,
     "[L-DEV] Leader Developer": 2,
-    " continental🔥 continental Administração": 3,
+    "〘🔥〙 Administração": 3,
     "[Sb] Sub criador": 4,
     "[Cr] Creator": 5,
 }
 
-# Tabela de Patentes com Horas de CDP, Tag e Categoria com Emojis
 PATENTES_CONFIG = {
     # Praças
-    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": " continental🌾 continental  Militares Praças"},
-    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": " continental🌾关  Militares Praças"},
-    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": " continental🌾 continental  Militares Praças"},
+    "[REC] Recruta": {"horas": 3, "tag": "[REC]", "categoria": "〘🌾〙  Militares Praças"},
+    "[SLD] Soldado": {"horas": 6, "tag": "[SLD]", "categoria": "〘🌾〙  Militares Praças"},
+    "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "〘🌾〙  Militares Praças"},
 
     # Graduados
-    "[3 SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3 SGT]", "categoria": " continental🎓 continental Militares Graduados"},
-    "[2 SGT] Segundo-Sargento": {"horas": 20, "tag": "[2 SGT]", "categoria": " continental🎓 continental Militares Graduados"},
-    "[1 SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1 SGT]", "categoria": " continental🎓 continental Militares Graduados"},
-    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": " continental🎓 continental Militares Graduados"},
+    "[3 SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[2 SGT] Segundo-Sargento": {"horas": 20, "tag": "[2 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[1 SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "〘🎓〙 Militares Graduados"},
 
     # Praças Especiais
-    "[CDT] Cadete": {"horas": 35, "tag": "[CDT]", "categoria": " continental🪖 continental Praças Especiais"},
+    "[CDT] Cadete": {"horas": 35, "tag": "[CDT]", "categoria": "〘🪖〙 Praças Especiais"},
 
     # Oficiais Subalternos
-    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": " continental🗡️ continentalOficiais Subalternos"},
-    "[2 TEN] Segundo-Tenente": {"horas": 45, "tag": "[2 TEN]", "categoria": " continental🗡️ continentalOficiais Subalternos"},
-    "[1 TEN] Primeiro-Tenente": {"horas": 50, "tag": "[1 TEN]", "categoria": " continental🗡️ continentalOficiais Subalternos"},
+    "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "〘🗡️〙Oficiais Subalternos"},
+    "[2 TEN] Segundo-Tenente": {"horas": 45, "tag": "[2 TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
+    "[1 TEN] Primeiro-Tenente": {"horas": 50, "tag": "[1 TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
 
     # Oficiais Intermediários
-    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": " continental⭐️ continentalOficiais Intermediário"},
+    "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "〘⭐️〙Oficiais Intermediário"},
 
     # Oficiais Superiores
-    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": " continental🏅 continentalOficiais Superiores"},
-    "[TEN-CEL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": " continental🏅 continentalOficiais Superiores"},
-    "[COR] Coronel": {"horas": 70, "tag": "[COR]", "categoria": " continental🏅 continentalOficiais Superiores"},
+    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "〘🏅〙Oficiais Superiores"},
+    "[TEN-CEL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
+    "[COR] Coronel": {"horas": 70, "tag": "[COR]", "categoria": "〘🏅〙Oficiais Superiores"},
 
     # Oficiais Generais
-    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": " continental⚔️{Oficiais Generais"},
-    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": " continental⚔️ continentalOficiais Generais"},
-    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": " continental⚔️ continentalOficiais Generais"},
+    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "〘⚔️〙Oficiais Generais"},
 }
 
 historico_cdp = {}
@@ -67,7 +67,7 @@ historico_cdp = {}
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"Bot online como {bot.user}")
+    print(f"Bot online e sincronizado como {bot.user}")
 
 def verificar_nivel_autor(user):
     if user.guild_permissions.administrator:
@@ -91,15 +91,14 @@ def verificar_nivel_autor(user):
     return nivel_autor
 
 
-# --- COMANDO: /promover ---
+# --- 1. COMANDO: /promover ---
 @bot.tree.command(name="promover", description="Promove um militar respeitando as permissões da hierarquia.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
     await interaction.response.defer()
 
-    nome_cargo_novo = cargo_patente.name
-    config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
+    config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registrado na tabela de CDP.")
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.")
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -154,15 +153,14 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     await interaction.followup.send(embed=embed)
 
 
-# --- COMANDO: /promover_varios ---
+# --- 2. COMANDO: /promover_varios ---
 @bot.tree.command(name="promover_varios", description="Promove vários militares de uma vez só (mencione-os).")
 async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_patente: discord.Role):
     await interaction.response.defer()
 
-    nome_cargo_novo = cargo_patente.name
-    config_novo = PATENTES_CONFIG.get(nome_cargo_novo)
+    config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registrado na tabela de CDP.")
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.")
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -188,9 +186,7 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
         return
 
     agora = datetime.datetime.now()
-    sucessos = []
-    erros = []
-
+    sucessos, erros = [], []
     cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
     horas_cdp = config_novo["horas"]
 
@@ -227,7 +223,7 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
     await interaction.followup.send(embed=embed)
 
 
-# --- COMANDO: /rebaixar ---
+# --- 3. COMANDO: /rebaixar ---
 @bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta a CDP.")
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
     await interaction.response.defer()
@@ -241,20 +237,14 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.")
         return
 
-    nome_cargo_novo = cargo_patente_nova.name
-    config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
+    config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registrado na tabela.")
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.")
         return
 
-    patente_antiga_nome = "Desconhecida"
-    config_antiga = None
-    cargo_patente_antigo = None
-    cargo_categoria_antigo = None
-
+    cargo_patente_antigo, cargo_categoria_antigo, config_antiga = None, None, None
     for nome_p, cfg in PATENTES_CONFIG.items():
         if cfg["tag"] in membro.display_name:
-            patente_antiga_nome = nome_p
             config_antiga = cfg
             cargo_patente_antigo = discord.utils.get(interaction.guild.roles, name=nome_p)
             if cfg["categoria"]:
@@ -300,7 +290,7 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     await interaction.followup.send(embed=embed)
 
 
-# --- COMANDO: /rebaixar_varios ---
+# --- 4. COMANDO: /rebaixar_varios ---
 @bot.tree.command(name="rebaixar_varios", description="Rebaixa vários militares de uma vez só (mencione-os).")
 async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_patente_nova: discord.Role):
     await interaction.response.defer()
@@ -314,10 +304,9 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
         await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.")
         return
 
-    nome_cargo_novo = cargo_patente_nova.name
-    config_nova = PATENTES_CONFIG.get(nome_cargo_novo)
+    config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registrado na tabela.")
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.")
         return
 
     ids_membros = re.findall(r'<@!?(\d+)>', mencoes)
@@ -336,10 +325,7 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
         if not membro:
             continue
 
-        cargo_patente_antigo = None
-        cargo_categoria_antigo = None
-        config_antiga = None
-
+        cargo_patente_antigo, cargo_categoria_antigo, config_antiga = None, None, None
         for nome_p, cfg in PATENTES_CONFIG.items():
             if cfg["tag"] in membro.display_name:
                 config_antiga = cfg
@@ -380,7 +366,7 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
     await interaction.followup.send(embed=embed)
 
 
-# --- COMANDO: /cdp ---
+# --- 5. COMANDO: /cdp ---
 @bot.tree.command(name="cdp", description="Consulta o tempo restante de CDP de um militar.")
 async def cdp(interaction: discord.Interaction, membro: discord.Member = None):
     await interaction.response.defer()
@@ -407,7 +393,7 @@ async def cdp(interaction: discord.Interaction, membro: discord.Member = None):
         await interaction.followup.send(embed=embed)
 
 
-# --- COMANDO: /hierarquia ---
+# --- 6. COMANDO: /hierarquia ---
 @bot.tree.command(name="hierarquia", description="Exibe a tabela de patentes e seus tempos de CDP.")
 async def hierarquia(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -449,7 +435,7 @@ async def hierarquia(interaction: discord.Interaction):
         inline=False
     )
     embed.add_field(
-        name="⚔️ Oficiais Gerais",
+        name="⚔️ Oficiais Generais",
         value="`[GEN EX]` General de Exército – 85 horas\n`[GEN DV]` General de Divisão – 80 horas\n`[GEN BDA]` General de Brigada – 75 horas",
         inline=False
     )
@@ -457,23 +443,21 @@ async def hierarquia(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Gestão")
     await interaction.followup.send(embed=embed)
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN)
 
-
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import threading
-
+# --- SERVIDOR WEB PARA O RENDER (Evita erro de porta) ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is alive!")
+        self.wfile.write(b"Bot is alive and running!")
 
 def run_web():
     server = HTTPServer(('0.0.0.0', 10000), SimpleHandler)
     server.serve_forever()
 
-# Inicia o mini servidor web numa thread separada para não bloquear o bot
 threading.Thread(target=run_web, daemon=True).start()
 
+# --- ARRANQUE DO BOT ---
+TOKEN = os.getenv("DISCORD_TOKEN")
+bot.run(TOKEN)
+    
