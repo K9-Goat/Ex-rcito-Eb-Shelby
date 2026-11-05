@@ -64,21 +64,14 @@ PATENTES_CONFIG = {
 
 historico_cdp = {}
 
-# --- EVENTO ON_READY ---
+# --- EVENTO ON_READY OTIMIZADO ---
 @bot.event
 async def on_ready():
     try:
-        bot.tree.clear_commands(guild=None)
-        await bot.tree.sync(guild=None)
-
-        for guild in bot.guilds:
-            bot.tree.clear_commands(guild=guild)
-            bot.tree.copy_global_to(guild=guild)
-            await bot.tree.sync(guild=guild)
-            
-        print(f"✅ Bot online e limpo como {bot.user}")
+        synced = await bot.tree.sync()
+        print(f"✅ Bot online como {bot.user} | Comandos sincronizados: {len(synced)}")
     except Exception as e:
-        print(f"Erro ao sincronizar comandos: {e}")
+        print(f"❌ Erro ao sincronizar comandos: {e}")
 
 def verificar_nivel_autor(user):
     if user.guild_permissions.administrator:
