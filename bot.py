@@ -491,6 +491,62 @@ async def regras(interaction: discord.Interaction):
     embed_principal.set_footer(text="Exército Brasileiro • Sistema Oficial de Normas e Conduta")
     await interaction.response.send_message(embed=embed_principal)
 
+# --- 8. COMANDO: /dicas_gramaticais ---
+@bot.tree.command(name="dicas_gramaticais", description="Exibe um guia completo e organizado de dicas gramaticais e ortografia.")
+async def dicas_gramaticais(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="📚 GUIA DE PORTUGUÊS E DIRETRIZES GRAMATICAIS",
+        description="Aprimora a tua comunicação diária com estas dicas essenciais de ortografia, concordância e gramática:",
+        color=discord.Color.teal()
+    )
+
+    embed.add_field(
+        name="✍️ 1. Erros Comuns do Dia a Dia",
+        value=(
+            "• **A gente vs. Agente:** \"A gente\" (separado) significa *nós*. \"Agente\" (junto) é uma profissão (ex: agente secreto).\n"
+            "• **Mas vs. Mais:** \"Mas\" indica oposição (porém). \"Mais\" indica quantidade ou adição (+).\n"
+            "• **Mal vs. Mau:** \"Mal\" é o oposto de *bem*. \"Mau\" é o oposto de *bom*."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔍 2. Emprego dos Porquês",
+        value=(
+            "• **Por que:** Usado em perguntas (no início) ou sentido de *por qual razão*.\n"
+            "• **Porque:** Usado em respostas e justificativas.\n"
+            "• **Por quê:** Usado isolado no final de frases.\n"
+            "• **O porquê:** Substantivo que significa *o motivo*, precedido de artigo."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="📝 3. Ortografia e Pontuação",
+        value=(
+            "• **Haver vs. A existir:** O verbo *haver* no sentido de existir é impessoal e fica sempre no singular (*Havia muitos soldados*).\n"
+            "• **A vs. Há:** \"A\" indica tempo futuro ou distância. \"Há\" indica tempo passado (do verbo haver).\n"
+            "• **Pontuação:** Use vírgulas para separar orações explicativas e evitar frases excessivamente longas."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🎯 4. Exemplo Prático de Correção",
+        value=(
+            "❌ **Errado:** \"Agente vai fazer a formatura hoje mais tarde.\"\n"
+            "✅ **Correto:** \"A gente vai fazer a formatura hoje mais tarde.\"\n"
+            "💡 **Explicação:** Usa-se *a gente* (separado) para indicar *nós*, e *mais* (com i) para indicar o acréscimo de tempo."
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text="Exército Brasileiro • Canal de Apoio Educativo e Gramatical")
+    await interaction.response.send_message(embed=embed)
+    
+
+
+
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
