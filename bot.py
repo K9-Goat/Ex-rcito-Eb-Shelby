@@ -9,7 +9,10 @@ import threading
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# --- CONFIGURAÇÕES DE HIERARQUIA E PATENTES ---
+# ⚠️ COLOQUE O ID DO SEU SERVIDOR AQUI (Apenas números) ⚠️
+GUILD_ID = discord.Object(id=1555695288075681822)
+
+# --- HIERARQUIA E PATENTES ---
 HIERARQUIA_CATEGORIAS = {
     "〘🌾〙  Militares Praças": 1,
     "〘🎓〙 Militares Graduados": 2,
@@ -67,10 +70,16 @@ historico_cdp = {}
 @bot.event
 async def on_ready():
     try:
-        await bot.tree.sync()
-        print(f"Bot online e comandos sincronizados com sucesso como {bot.user}")
+        # Limpa os comandos globais antigos para remover as duplicações
+        bot.tree.clear_commands(guild=None)
+        await bot.tree.sync(guild=None)
+        
+        # Sincroniza exclusivamente com o seu servidor instantaneamente
+        bot.tree.copy_global_to(guild=GUILD_ID)
+        await bot.tree.sync(guild=GUILD_ID)
+        print(f"Bot online e limpo! Comandos sincronizados no servidor {bot.user}")
     except Exception as e:
-        print(f"Erro ao sincronizar comandos: {e}")
+        print(f"Erro ao sincronizar: {e}")
 
 def verificar_nivel_autor(user):
     if user.guild_permissions.administrator:
@@ -436,20 +445,8 @@ async def hierarquia(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-# --- SERVIDOR WEB PARA O RENDER (Evita erro de porta) ---
+# --- SERVIDOR WEB DUMMY PARA O RENDER ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is alive and running!")
-
-def run_web():
-    server = HTTPServer(('0.0.0.0', 10000), SimpleHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_web, daemon=True).start()
-
-# --- ARRANQUE DO BOT ---
-TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN)
-    
+        self.end_header
