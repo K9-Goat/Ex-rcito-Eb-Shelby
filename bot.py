@@ -440,6 +440,65 @@ async def hierarquia(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
+# --- 7. COMANDO: /regras ---
+@bot.tree.command(name="regras", description="Exibe o manual oficial de regras e diretrizes do exército.")
+async def regras(interaction: discord.Interaction):
+    embed_principal = discord.Embed(
+        title="📜 MANUAL DE DIRETRIZES E REGRAS - EXÉRCITO",
+        description="O cumprimento rigoroso destas normas é obrigatório para todos os militares e membros do servidor. A ignorância das regras não exime o infrator de punição.",
+        color=discord.Color.dark_red()
+    )
+
+    embed_principal.add_field(
+        name="🛡️ 1. Conduta e Respeito Geral",
+        value=(
+            "• **1.1** Respeite todos os membros, independente de patente ou cargo.\n"
+            "• **1.2** É estritamente proibido qualquer tipo de ofensa, preconceito, racismo, toxicidade ou assédio.\n"
+            "• **1.3** Mantenha um ambiente saudável e focado na disciplina militar."
+        ),
+        inline=False
+    )
+
+    embed_principal.add_field(
+        name="⭐ 2. Hierarquia e Disciplina",
+        value=(
+            "• **2.1** Ordens de superiores devem ser cumpridas prontamente, dentro do bom senso.\n"
+            "• **2.2** O desrespeito à cadeia de comando e a superiores resultará em punição severa ou rebaixamento.\n"
+            "• **2.3** Pedidos de promoção devem seguir os critérios oficiais e prazos de CDP estabelecidos."
+        ),
+        inline=False
+    )
+
+    embed_principal.add_field(
+        name="🎯 3. Treinamentos e Eventos",
+        value=(
+            "• **3.1** Respeite os instrutores e superiores durante os treinamentos.\n"
+            "• **3.2** Não interrompa instruções sem extrema necessidade.\n"
+            "• **3.3** Compareça aos eventos após confirmar presença e avise a liderança em caso de imprevistos.\n"
+            "• **3.4** É proibido atrapalhar intencionalmente as atividades ou manobras."
+        ),
+        inline=False
+    )
+
+    embed_principal.add_field(
+        name="💬 4. Regras de Canais e Voz",
+        value=(
+            "• **4.1** Utilize cada canal estritamente para a sua devida finalidade.\n"
+            "• **4.2** Evite gritos, barulhos excessivos ou spam de voz nos canais de atendimento e reuniões.\n"
+            "• **4.3** Não envie mensagens repetidas (flood) nem faça marcações desnecessárias de cargos ou membros.\n"
+            "• **4.4** Proibido o envio de links suspeitos, vírus ou qualquer tipo de divulgação não autorizada."
+        ),
+        inline=False
+    )
+
+    embed_principal.set_footer(text="Exército Brasileiro • Sistema Oficial de Normas e Conduta")
+    
+    await interaction.response.send_message(embed=embed_principal)
+    
+
+
+
+
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
