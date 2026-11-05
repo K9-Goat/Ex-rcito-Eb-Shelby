@@ -9,6 +9,9 @@ import threading
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ⚠️ SUBSTITUI ESTE NÚMERO PELO ID EXATO DO TEU SERVIDOR DO DISCORD ⚠️
+GUILD_ID = discord.Object(id=123456789012345678)
+
 # --- CONFIGURAÇÕES DE HIERARQUIA E PATENTES ---
 HIERARQUIA_CATEGORIAS = {
     "〘🌾〙  Militares Praças": 1,
@@ -67,8 +70,11 @@ historico_cdp = {}
 @bot.event
 async def on_ready():
     try:
-        await bot.tree.sync()
-        print(f"Bot online e comandos sincronizados com sucesso como {bot.user}")
+        # Sincroniza limpidamente apenas para o servidor indicado, eliminando duplicados globais
+        bot.tree.clear_commands(guild=GUILD_ID)
+        bot.tree.copy_global_to(guild=GUILD_ID)
+        await bot.tree.sync(guild=GUILD_ID)
+        print(f"Bot online e comandos sincronizados sem duplicações como {bot.user}")
     except Exception as e:
         print(f"Erro ao sincronizar comandos: {e}")
 
@@ -441,15 +447,4 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is alive and running!")
-
-def run_web():
-    server = HTTPServer(('0.0.0.0', 10000), SimpleHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_web, daemon=True).start()
-
-# --- ARRANQUE DO BOT ---
-TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN)
-    
+        self.wfile.write(b"Bot 
