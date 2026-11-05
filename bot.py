@@ -66,8 +66,10 @@ historico_cdp = {}
 
 @bot.event
 async def on_ready():
+    # Limpa comandos antigos duplicados globalmente antes de sincronizar
+    bot.tree.clear_commands(guild=None)
     await bot.tree.sync()
-    print(f"Bot online e sincronizado como {bot.user}")
+    print(f"Bot online e sincronizado limpidamente como {bot.user}")
 
 def verificar_nivel_autor(user):
     if user.guild_permissions.administrator:
@@ -393,35 +395,25 @@ async def cdp(interaction: discord.Interaction, membro: discord.Member = None):
         await interaction.followup.send(embed=embed)
 
 
-# --- 6. COMANDO: /hierarquia (Ordem correta: de baixo para cima) ---
+# --- 6. COMANDO: /hierarquia (Ordem correta: Generais em cima, Praças em baixo) ---
 @bot.tree.command(name="hierarquia", description="Exibe a tabela de patentes e seus tempos de CDP.")
 async def hierarquia(interaction: discord.Interaction):
     await interaction.response.defer()
 
     embed = discord.Embed(
         title="🎖️ Hierarquia e Tempos de CDP",
-        description="Confira abaixo as patentes e a duração de CDP de cada categoria (do mais baixo para o mais alto):",
+        description="Confira abaixo as patentes e a duração de CDP de cada categoria (do topo para a base):",
         color=discord.Color.gold()
     )
 
     embed.add_field(
-        name="🌾 Militares Praças",
-        value="`[REC]` Recruta – 3 horas\n`[SLD]` Soldado – 6 horas\n`[CB]` Cabo – 12 horas",
+        name="⚔️ Oficiais Generais",
+        value="`[GEN-EX]` General de Exército – 85 horas\n`[GEN-DV]` General de Divisão – 80 horas\n`[GEN-BDA]` General de Brigada – 75 horas",
         inline=False
     )
     embed.add_field(
-        name="🎓 Militares Graduados",
-        value="`[3 SGT]` Terceiro-Sargento – 15 horas\n`[2 SGT]` Segundo-Sargento – 20 horas\n`[1 SGT]` Primeiro-Sargento – 25 horas\n`[ST]` Subtenente – 30 horas",
-        inline=False
-    )
-    embed.add_field(
-        name="🪖 Praças Especiais",
-        value="`[CDT]` Cadete – 35 horas",
-        inline=False
-    )
-    embed.add_field(
-        name="🗡️ Oficiais Subalternos",
-        value="`[AAO]` Aspirante a Oficial – 40 horas\n`[2 TEN]` Segundo-Tenente – 45 horas\n`[1 TEN]` Primeiro-Tenente – 50 horas",
+        name="🏅 Oficiais Superiores",
+        value="`[COR]` Coronel – 70 horas\n`[TEN-CEL]` Tenente-Coronel – 65 horas\n`[MAJ]` Major – 60 horas",
         inline=False
     )
     embed.add_field(
@@ -430,13 +422,23 @@ async def hierarquia(interaction: discord.Interaction):
         inline=False
     )
     embed.add_field(
-        name="🏅 Oficiais Superiores",
-        value="`[MAJ]` Major – 60 horas\n`[TEN-CEL]` Tenente-Coronel – 65 horas\n`[COR]` Coronel – 70 horas",
+        name="🗡️ Oficiais Subalternos",
+        value="`[1 TEN]` Primeiro-Tenente – 50 horas\n`[2 TEN]` Segundo-Tenente – 45 horas\n`[AAO]` Aspirante a Oficial – 40 horas",
         inline=False
     )
     embed.add_field(
-        name="⚔️ Oficiais Generais",
-        value="`[GEN-BDA]` General de Brigada – 75 horas\n`[GEN-DV]` General de Divisão – 80 horas\n`[GEN-EX]` General de Exército – 85 horas",
+        name="🪖 Praças Especiais",
+        value="`[CDT]` Cadete – 35 horas",
+        inline=False
+    )
+    embed.add_field(
+        name="🎓 Militares Graduados",
+        value="`[ST]` Subtenente – 30 horas\n`[1 SGT]` Primeiro-Sargento – 25 horas\n`[2 SGT]` Segundo-Sargento – 20 horas\n`[3 SGT]` Terceiro-Sargento – 15 horas",
+        inline=False
+    )
+    embed.add_field(
+        name="🌾 Militares Praças",
+        value="`[CB]` Cabo – 12 horas\n`[SLD]` Soldado – 6 horas\n`[REC]` Recruta – 3 horas",
         inline=False
     )
 
@@ -460,4 +462,4 @@ threading.Thread(target=run_web, daemon=True).start()
 # --- ARRANQUE DO BOT ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
-    
+        
