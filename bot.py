@@ -459,3 +459,21 @@ async def hierarquia(interaction: discord.Interaction):
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
+
+
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is alive!")
+
+def run_web():
+    server = HTTPServer(('0.0.0.0', 10000), SimpleHandler)
+    server.serve_forever()
+
+# Inicia o mini servidor web numa thread separada para não bloquear o bot
+threading.Thread(target=run_web, daemon=True).start()
+
