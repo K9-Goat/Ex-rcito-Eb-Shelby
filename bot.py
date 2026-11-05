@@ -67,8 +67,12 @@ historico_cdp = {}
 @bot.event
 async def on_ready():
     try:
-        await bot.tree.sync()
-        print(f"Bot online e comandos sincronizados com sucesso como {bot.user}")
+        # Limpa e sincroniza de forma limpa em cada servidor para evitar duplicados
+        for guild in bot.guilds:
+            bot.tree.clear_commands(guild=guild)
+            bot.tree.copy_global_to(guild=guild)
+            await bot.tree.sync(guild=guild)
+        print(f"Bot online e totalmente sincronizado como {bot.user}")
     except Exception as e:
         print(f"Erro ao sincronizar comandos: {e}")
 
@@ -436,7 +440,7 @@ async def hierarquia(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-# --- SERVIDOR WEB DUMMY PARA O RENDER ---
+# --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -449,7 +453,6 @@ def run_web():
 
 threading.Thread(target=run_web, daemon=True).start()
 
-# --- INICIALIZAÇÃO ---
+# --- INICIALIZAÇÃO DO BOT ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
-    
