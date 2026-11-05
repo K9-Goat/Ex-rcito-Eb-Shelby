@@ -274,43 +274,31 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         await interaction.followup.send(f"❌ O cargo **{nome_cargo_novo}** não está registado na tabela de CDP.")
         return
 
-                # 1. Identificar a Categoria do Autor da Promoção (Quem enviou o comando)
-    categoria_autor = None
+                    # 1. Identificar a Categoria do Autor da Promoção
     nivel_autor = 0
 
-    # Verificação de segurança: se fores Administrador ou General de Exército, nível máximo imediato!
     if interaction.user.guild_permissions.administrator:
         nivel_autor = 7
     else:
-        # Procura nas tags do apelido do autor
-        for nome_p, cfg in PATENTES_CONFIG.items():
-            if cfg["tag"] in interaction.user.display_name:
-                categoria_autor = cfg["categoria"]
-                nivel_autor = HIERARQUIA_CATEGORIAS.get(categoria_autor, 0)
-                break
-        
-        # Se não encontrou pelo nick, verifica nos cargos reais do Discord do utilizador
-        if nivel_autor == 0:
-            for role in interaction.user.roles:
-                if "General de Exército" in role.name or "[GEN EX]" in role.name:
-                    nivel_autor = 7
-                    break
-                for cat_nome, cat_nivel in HIERARQUIA_CATEGORIAS.items():
-                    if role.name in cat_nome or cat_nome in role.name:
-                        if cat_nivel > nivel_autor:
-                            nivel_autor = cat_nivel
-                            
-                            
-            # Se não encontrou pelo nick, verifica nos cargos reais do Discord do utilizador
-    if nivel_autor == 0:
         for role in interaction.user.roles:
-            if "General" in role.name or "[GEN-" in role.name or "[X] Oficiais Gerais" in role.name:
+            # Verifica se tens o emoji de Oficial General ou a palavra General/GEN
+            if "⚔️" in role.name or "General" in role.name or "[GEN-" in role.name:
                 nivel_autor = 7
                 break
-            for cat_nome, cat_nivel in HIERARQUIA_CATEGORIAS.items():
-                if role.name in cat_nome or cat_nome in role.name:
-                    nivel_autor = cat_nivel
-
+            # Verifica as restantes categorias com base nos emojis exatos
+            elif "🏅" in role.name:  # Oficiais Superiores
+                nivel_autor = max(nivel_autor, 6)
+            elif "⭐️" in role.name:  # Oficiais Intermediário
+                nivel_autor = max(nivel_autor, 5)
+            elif "🗡️" in role.name:  # Oficiais Subalternos
+                nivel_autor = max(nivel_autor, 4)
+            elif "🪖" in role.name:  # Praças Especiais
+                nivel_autor = max(nivel_autor, 3)
+            elif "🎓" in role.name:  # Militares Graduados
+                nivel_autor = max(nivel_autor, 2)
+            elif "🌾" in role.name:  # Militares Praças
+                nivel_autor = max(nivel_autor, 1)
+                
     # 2. Regras de Permissão por Categoria de Autor
     cat_destino = config_novo["categoria"]
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
