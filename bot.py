@@ -543,73 +543,8 @@ async def dicas_gramaticais(interaction: discord.Interaction):
 
     embed.set_footer(text="Exército Brasileiro • Canal de Apoio Educativo e Gramatical")
     await interaction.response.send_message(embed=embed)
-
-
-# --- CLASSE DO MENU SELETOR DE CARGOS DE TREINO ---
-class SeletorTreinosView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.select(
-        placeholder="Selecione os pings de treino que deseja receber...",
-        min_values=1,
-        max_values=1,
-        options=[
-            discord.SelectOption(label="Treinos-Praças", emoji="🌾", description="Avisos de treinamentos de Praças"),
-            discord.SelectOption(label="Treinos-Graduados", emoji="🎓", description="Avisos de treinamentos de Graduados"),
-            discord.SelectOption(label="Treinos-Subalternos", emoji="🗡️", description="Avisos de treinamentos de Subalternos"),
-            discord.SelectOption(label="Treinos-Intermediários", emoji="⭐️", description="Avisos de treinamentos de Intermediários"),
-            discord.SelectOption(label="Treinos-Superiores", emoji="🏅", description="Avisos de treinamentos de Superiores"),
-            discord.SelectOption(label="Treinos-Generais", emoji="⚔️", description="Avisos de treinamentos de Generais"),
-        ]
-    )
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        nome_cargo = select.values[0]
-        cargo = discord.utils.get(interaction.guild.roles, name=nome_cargo)
-
-        if not cargo:
-            await interaction.response.send_message(f"❌ O cargo **{nome_cargo}** não foi encontrado no servidor.", ephemeral=True)
-            return
-
-        if cargo in interaction.user.roles:
-            await interaction.user.remove_roles(cargo)
-            await interaction.response.send_message(f"🔴 O cargo **{cargo.name}** foi removido de você!", ephemeral=True)
-        else:
-            await interaction.user.add_roles(cargo)
-            await interaction.response.send_message(f"🟢 O cargo **{cargo.name}** foi adicionado a você!", ephemeral=True)
-
-
-# --- COMANDO: /ping_treinos ---
-@bot.tree.command(name="ping_treinos", description="Envia o painel de seleção de pings de treinamentos.")
-async def ping_treinos(interaction: discord.Interaction):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
-        return
-
-    embed = discord.Embed(
-        title="🔔 PAINEL DE NOTIFICAÇÕES DE TREINO",
-        description=(
-            "Militares, fiquem atentos!\n\n"
-            "Para receber as notificações de chamadas e convocatórias dos **Treinamentos**, "
-            "selecione o símbolo e categoria correspondente ao seu treino no menu abaixo.\n\n"
-            "• **🌾 Treinos-Praças**\n"
-            "• **🎓 Treinos-Graduados**\n"
-            "• **🗡️ Treinos-Subalternos**\n"
-            "• **⭐️ Treinos-Intermediários**\n"
-            "• **🏅 Treinos-Superiores**\n"
-            "• **⚔️ Treinos-Generais**\n\n"
-            "📌 *Dica: Selecione a opção novamente caso deseje remover a notificação.*"
-        ),
-        color=discord.Color.green()
-    )
-    embed.set_footer(text="Exército Brasileiro • Sistema de Notificações")
-
-    view = SeletorTreinosView()
-    await interaction.response.send_message(embed=embed, view=view)
     
     
-    
-
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
