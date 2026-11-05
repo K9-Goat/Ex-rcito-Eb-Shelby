@@ -277,27 +277,29 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
                     # 1. Identificar a Categoria do Autor da Promoção
     nivel_autor = 0
 
+        # 7. Identificar a Categoria do Autor da Promoção
+    nivel_autor = 0
+
     if interaction.user.guild_permissions.administrator:
         nivel_autor = 7
     else:
         for role in interaction.user.roles:
-            # Verifica se tens o emoji de Oficial General ou a palavra General/GEN
-            if "⚔️" in role.name or "General" in role.name or "[GEN-" in role.name:
-                nivel_autor = 7
-                break
-            # Verifica as restantes categorias com base nos emojis exatos
-            elif "🏅" in role.name:  # Oficiais Superiores
+            # Verifica se é General ou Oficial General por qualquer variação do nome ou emoji
+            if any(termo in role.name for termo in ["General", "[GEN-", "Oficiais Gerais", "⚔️"]):
+                nivel_autor = max(nivel_autor, 7)
+            elif "🏅" in role.name or "Superiores" in role.name:
                 nivel_autor = max(nivel_autor, 6)
-            elif "⭐️" in role.name:  # Oficiais Intermediário
+            elif "⭐️" in role.name or "Intermediário" in role.name or "Intermediarios" in role.name:
                 nivel_autor = max(nivel_autor, 5)
-            elif "🗡️" in role.name:  # Oficiais Subalternos
+            elif "🗡️" in role.name or "Subalternos" in role.name:
                 nivel_autor = max(nivel_autor, 4)
-            elif "🪖" in role.name:  # Praças Especiais
+            elif "🪖" in role.name or "Especiais" in role.name:
                 nivel_autor = max(nivel_autor, 3)
-            elif "🎓" in role.name:  # Militares Graduados
+            elif "🎓" in role.name or "Graduados" in role.name:
                 nivel_autor = max(nivel_autor, 2)
-            elif "🌾" in role.name:  # Militares Praças
+            elif "🌾" in role.name or "Praças" in role.name:
                 nivel_autor = max(nivel_autor, 1)
+                
                 
     # 2. Regras de Permissão por Categoria de Autor
     cat_destino = config_novo["categoria"]
