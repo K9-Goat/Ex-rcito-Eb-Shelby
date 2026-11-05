@@ -462,4 +462,4 @@ threading.Thread(target=run_web, daemon=True).start()
 # --- ARRANQUE DO BOT ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
-        
+    
