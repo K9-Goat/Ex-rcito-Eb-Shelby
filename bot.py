@@ -66,10 +66,11 @@ historico_cdp = {}
 
 @bot.event
 async def on_ready():
-    # Limpa comandos antigos duplicados globalmente antes de sincronizar
-    bot.tree.clear_commands(guild=None)
-    await bot.tree.sync()
-    print(f"Bot online e sincronizado limpidamente como {bot.user}")
+    try:
+        await bot.tree.sync()
+        print(f"Bot online e comandos sincronizados com sucesso como {bot.user}")
+    except Exception as e:
+        print(f"Erro ao sincronizar comandos: {e}")
 
 def verificar_nivel_autor(user):
     if user.guild_permissions.administrator:
@@ -96,11 +97,9 @@ def verificar_nivel_autor(user):
 # --- 1. COMANDO: /promover ---
 @bot.tree.command(name="promover", description="Promove um militar respeitando as permissões da hierarquia.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
-    await interaction.response.defer()
-
     config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.")
+        await interaction.response.send_message(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -108,16 +107,16 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
     if nivel_autor <= 3:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.", ephemeral=True)
         return
     elif nivel_autor == 4 and nivel_destino > 1:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
         return
     elif nivel_autor == 5 and nivel_destino > 3:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.", ephemeral=True)
         return
     elif nivel_autor == 6 and nivel_destino > 5:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos de Oficial Superior ou General.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para cargos de Oficial Superior ou General.", ephemeral=True)
         return
 
     agora = datetime.datetime.now()
@@ -125,7 +124,7 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         restante = historico_cdp[membro.id] - agora
         horas = restante.seconds // 3600
         minutos = (restante.seconds % 3600) // 60
-        await interaction.followup.send(f"❌ **PROMOÇÃO BLOQUEADA!** {membro.mention} ainda está em CDP. Falta(m) **{restante.days}d {horas}h {minutos}m**.")
+        await interaction.response.send_message(f"❌ **PROMOÇÃO BLOQUEADA!** {membro.mention} ainda está em CDP. Falta(m) **{restante.days}d {horas}h {minutos}m**.", ephemeral=True)
         return
 
     cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
@@ -152,17 +151,15 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     embed.add_field(name="🕒 Próxima Promoção", value=data_liberacao.strftime('%d/%m/%Y às %H:%M'), inline=True)
     embed.set_footer(text=f"Promovido por {interaction.user.display_name}")
 
-    await interaction.followup.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # --- 2. COMANDO: /promover_varios ---
 @bot.tree.command(name="promover_varios", description="Promove vários militares de uma vez só (mencione-os).")
 async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_patente: discord.Role):
-    await interaction.response.defer()
-
     config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.")
+        await interaction.response.send_message(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -170,21 +167,21 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
     if nivel_autor <= 3:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Não tens permissão para promover.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Não tens permissão para promover.", ephemeral=True)
         return
     elif nivel_autor == 4 and nivel_destino > 1:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
         return
     elif nivel_autor == 5 and nivel_destino > 3:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover até Praças Especiais.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover até Praças Especiais.", ephemeral=True)
         return
     elif nivel_autor == 6 and nivel_destino > 5:
-        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Oficiais Superiores/Generais.")
+        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Oficiais Superiores/Generais.", ephemeral=True)
         return
 
     ids_membros = re.findall(r'<@!?(\d+)>', mencoes)
     if not ids_membros:
-        await interaction.followup.send("❌ Nenhum militar válido foi mencionado.")
+        await interaction.response.send_message("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
         return
 
     agora = datetime.datetime.now()
@@ -222,26 +219,24 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
         embed.add_field(name="❌ Falhas / Em CDP", value=", ".join(erros), inline=False)
     embed.set_footer(text=f"Ação executada por {interaction.user.display_name}")
 
-    await interaction.followup.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # --- 3. COMANDO: /rebaixar ---
 @bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta a CDP.")
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
-    await interaction.response.defer()
-
     nivel_autor = 0
     for role in interaction.user.roles:
         if role.name in CARGOS_REBAIXAR_PERMISSAO:
             nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
 
     if nivel_autor == 0:
-        await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.")
+        await interaction.response.send_message("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
         return
 
     config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.")
+        await interaction.response.send_message(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
         return
 
     cargo_patente_antigo, cargo_categoria_antigo, config_antiga = None, None, None
@@ -289,31 +284,29 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     embed.add_field(name="📌 Novo Cargo", value=cargo_patente_nova.mention, inline=False)
     embed.set_footer(text=f"Rebaixado por {interaction.user.display_name}")
 
-    await interaction.followup.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # --- 4. COMANDO: /rebaixar_varios ---
 @bot.tree.command(name="rebaixar_varios", description="Rebaixa vários militares de uma vez só (mencione-os).")
 async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_patente_nova: discord.Role):
-    await interaction.response.defer()
-
     nivel_autor = 0
     for role in interaction.user.roles:
         if role.name in CARGOS_REBAIXAR_PERMISSAO:
             nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
 
     if nivel_autor == 0:
-        await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.")
+        await interaction.response.send_message("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
         return
 
     config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.")
+        await interaction.response.send_message(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
         return
 
     ids_membros = re.findall(r'<@!?(\d+)>', mencoes)
     if not ids_membros:
-        await interaction.followup.send("❌ Nenhum militar válido foi mencionado.")
+        await interaction.response.send_message("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
         return
 
     sucessos = []
@@ -365,13 +358,12 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
         embed.add_field(name="✅ Rebaixados com Sucesso", value=", ".join(sucessos), inline=False)
     embed.set_footer(text=f"Ação executada por {interaction.user.display_name}")
 
-    await interaction.followup.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # --- 5. COMANDO: /cdp ---
 @bot.tree.command(name="cdp", description="Consulta o tempo restante de CDP de um militar.")
 async def cdp(interaction: discord.Interaction, membro: discord.Member = None):
-    await interaction.response.defer()
     membro = membro or interaction.user
     agora = datetime.datetime.now()
 
@@ -385,21 +377,19 @@ async def cdp(interaction: discord.Interaction, membro: discord.Member = None):
         embed.add_field(name="Militar", value=membro.mention, inline=False)
         embed.add_field(name="Tempo Restante", value=f"**{restante.days}d {horas}h {minutos}m**", inline=True)
         embed.add_field(name="Liberação", value=liberacao.strftime('%d/%m/%Y às %H:%M'), inline=True)
-        await interaction.followup.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
             title="✅ Status de CDP",
             description=f"{membro.mention} **está livre para promoção!** Nenhuma CDP ativa no momento.",
             color=discord.Color.green()
         )
-        await interaction.followup.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 
-# --- 6. COMANDO: /hierarquia (Ordem correta: Generais em cima, Praças em baixo) ---
+# --- 6. COMANDO: /hierarquia ---
 @bot.tree.command(name="hierarquia", description="Exibe a tabela de patentes e seus tempos de CDP.")
 async def hierarquia(interaction: discord.Interaction):
-    await interaction.response.defer()
-
     embed = discord.Embed(
         title="🎖️ Hierarquia e Tempos de CDP",
         description="Confira abaixo as patentes e a duração de CDP de cada categoria (do topo para a base):",
@@ -443,7 +433,7 @@ async def hierarquia(interaction: discord.Interaction):
     )
 
     embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Gestão")
-    await interaction.followup.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 # --- SERVIDOR WEB PARA O RENDER (Evita erro de porta) ---
