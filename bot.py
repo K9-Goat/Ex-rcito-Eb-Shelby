@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # --- HIERARQUIA E PATENTES ---
 HIERARQUIA_CATEGORIAS = {
-    "Libraries🌾　  Militares Praças": 1,
+    "〘🌾〙  Militares Praças": 1,
     "〘🎓〙 Militares Graduados": 2,
     "〘🪖〙 Praças Especiais": 3,
     "〘🗡️〙Oficiais Subalternos": 4,
@@ -64,21 +64,19 @@ PATENTES_CONFIG = {
 
 historico_cdp = {}
 
-# --- EVENTO ON_READY (LIMPEZA TOTAL DE COMANDOS DUPLICADOS) ---
+# --- EVENTO ON_READY ---
 @bot.event
 async def on_ready():
     try:
-        # Limpa todos os comandos globais acumulados na API
         bot.tree.clear_commands(guild=None)
         await bot.tree.sync(guild=None)
 
-        # Registra e sincroniza a arvore limpa em cada servidor
         for guild in bot.guilds:
             bot.tree.clear_commands(guild=guild)
             bot.tree.copy_global_to(guild=guild)
             await bot.tree.sync(guild=guild)
             
-        print(f"✅ Todos os comandos duplicados foram eliminados. Bot online como {bot.user}")
+        print(f"✅ Bot online e limpo como {bot.user}")
     except Exception as e:
         print(f"Erro ao sincronizar comandos: {e}")
 
