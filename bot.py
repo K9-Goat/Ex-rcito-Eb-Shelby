@@ -637,7 +637,7 @@ async def informacoes(interaction: discord.Interaction):
 import aiohttp
 
 # Configurações do Grupo do Roblox (Substitui pelos teus dados reais)
-ROBLOX_GROUP_ID = 0000000  # <--- Coloca aqui o ID numérico do grupo do Roblox do EB do Shelby
+ROBLOX_GROUP_ID = 674505905  # <--- Coloca aqui o ID numérico do grupo do Roblox do EB do Shelby
 
 # --- COMANDO: /verificar ---
 @bot.tree.command(name="verificar", description="Vincula a tua conta do Roblox e sincroniza a patente do grupo.")
