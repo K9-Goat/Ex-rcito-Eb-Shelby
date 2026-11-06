@@ -544,7 +544,57 @@ async def dicas_gramaticais(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro • Canal de Apoio Educativo e Gramatical")
     await interaction.response.send_message(embed=embed)
     
+
+
+# --- 9. COMANDO: /informacoes (Sobre o Exército) ---
+@bot.tree.command(name="informacoes", description="Exibe informações gerais sobre o Exército Brasileiro do Shelby no Roblox.")
+async def informacoes(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🇧🇷 EXÉRCITO BRASILEIRO DO SHELBY • INFORMAÇÕES",
+        description="Bem-vindo ao quartel-general oficial! Descobre mais sobre a nossa instituição e diretrizes no Roblox:",
+        color=discord.Color.gold()
+    )
+
+    embed.add_field(
+        name="🎮 1. Sobre a Instituição (Roblox)",
+        value=(
+            "• **Início:** O nosso exército é um projeto **novo**, estruturado para proporcionar uma experiência imersiva, realista e disciplinada de simulação militar no Roblox.\n"
+            "• **Missão:** Formar militares competentes, unidos e focados no companheirismo e na hierarquia."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🎖️ 2. Hierarquia e Progressão",
+        value=(
+            "• **Patentes:** A nossa estrutura divide-se em 7 categorias (desde Praças até Oficiais Generais).\n"
+            "• **Promoções:** Respeitamos rigorosamente os tempos de CDP (Cool Down Period). Consulta sempre o comando `/cdp` e a tabela em `/hierarquia`."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="📜 3. Normas e Conduta",
+        value=(
+            "• **Disciplina:** O respeito à cadeia de comando é obrigatório.\n"
+            "• **Manuais:** Consulta os comandos `/regras` para diretrizes de comportamento e `/dicas` para orientações de evolução."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="⭐ 4. Como Participar e Crescer",
+        value=(
+            "• **Treinamentos:** Fica atento aos canais de avisos para participares nas instruções e formaturas.\n"
+            "• **Comunicação:** Usa sempre uma linguagem clara e sê ativo na comunidade."
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text="Exército Brasileiro do Shelby • Roblox Simulation")
+    await interaction.response.send_message(embed=embed)
     
+
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
