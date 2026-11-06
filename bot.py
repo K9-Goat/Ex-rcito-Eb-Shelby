@@ -1,3 +1,4 @@
+import aiohttp
 import discord
 from discord.ext import commands
 import datetime
@@ -5,6 +6,9 @@ import os
 import re
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+
+ROBLOX_GROUP_ID = 674505905
+
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -628,6 +632,110 @@ async def informacoes(interaction: discord.Interaction):
     embed.set_footer(text="Exército Brasileiro do Shelby • Roblox Simulation")
     await interaction.response.send_message(embed=embed)
     
+
+
+import aiohttp
+
+# Configurações do Grupo do Roblox (Substitui pelos teus dados reais)
+ROBLOX_GROUP_ID = 0000000  # <--- Coloca aqui o ID numérico do grupo do Roblox do EB do Shelby
+
+# --- COMANDO: /verificar ---
+@bot.tree.command(name="verificar", description="Vincula a tua conta do Roblox e sincroniza a patente do grupo.")
+async def verificar(interaction: discord.Interaction, usuario_roblox: str):
+    await interaction.response.defer(ephemeral=True)
+
+    # 1. Procura o ID do usuário no Roblox pelo nome
+    async with aiohttp.ClientSession() as session:
+        url_user = "https://users.roblox.com/v1/usernames/users"
+        payload = {"usernames": [usuario_roblox], "excludeBannedUsers": True}
+        
+        async with session.post(url_user, json=payload) as resp:
+            if resp.status != 200:
+                await interaction.followup.send("❌ Erro ao comunicar com a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                return
+            
+            data = await resp.json()
+            if not data.get("data"):
+                await interaction.followup.send(f"❌ O usuário do Roblox **{usuario_roblox}** não foi encontrado.", ephemeral=True)
+                return
+            
+            roblox_user_id = data["data"][0]["id"]
+            roblox_display = data["data"][0]["displayName"]
+            roblox_name = data["data"][0]["name"]
+
+        # 2. Verifica se o usuário está no grupo do Roblox e qual o cargo dele
+        url_group = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+        async with session.get(url_group) as resp_group:
+            if resp_group.status != 200:
+                await interaction.followup.send("❌ Erro ao verificar os grupos do usuário no Roblox.", ephemeral=True)
+                return
+            
+            group_data = await resp_group.json()
+            cargo_grupo_nome = None
+            
+            # Procura o grupo do exército na lista de grupos do usuário
+            for g in group_data.get("data", []):
+                if g["group"]["id"] == ROBLOX_GROUP_ID:
+                    cargo_grupo_nome = g["role"]["name"]
+                    break
+
+    if not cargo_grupo_nome:
+        await interaction.followup.send(f"❌ Encontramos a tua conta (**{roblox_display}**), mas **não estás no grupo oficial** do Exército do Shelby no Roblox!", ephemeral=True)
+        return
+
+    # 3. Faz a correspondência com o dicionário PATENTES_CONFIG do teu bot
+    # (Procura se o cargo do Roblox corresponde a alguma patente configurada no bot)
+    config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+    
+    membro = interaction.user
+    cargo_atribuido_msg = "Nenhum cargo correspondente automático"
+
+    if config_patente:
+        patentes_lista = list(PATENTES_CONFIG.keys())
+        
+        # Remove patentes antigas do Discord
+        for nome_pat in patentes_lista:
+            c_velho = discord.utils.get(interaction.guild.roles, name=nome_pat)
+            if c_velho and c_velho in membro.roles:
+                await membro.remove_roles(c_velho)
+
+        # Adiciona a nova patente e categoria correspondente
+        cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
+        cat_nome = config_patente["categoria"]
+        cargo_cat = discord.utils.get(interaction.guild.roles, name=cat_nome)
+
+        cargos_add = []
+        if cargo_novo:
+            cargos_add.append(cargo_novo)
+        if cargo_cat:
+            cargos_add.append(cargo_cat)
+            
+        if cargos_add:
+            await membro.add_roles(*cargos_add)
+
+        # Atualiza o Apelido/Nickname no Discord com a tag correta
+        tag = config_patente["tag"]
+        try:
+            await membro.edit(nick=f"{tag} {roblox_display}"[:32])
+        except Exception:
+            pass
+            
+        cargo_atribuido_msg = f"Cargo atualizado para: **{cargo_grupo_nome}**"
+
+    # Embed de Sucesso da Verificação
+    embed = discord.Embed(
+        title="🔗 Conta Verificada com Sucesso!",
+        description=f"A tua conta do Discord foi vinculada ao Roblox.",
+        color=discord.Color.green()
+    )
+    embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
+    embed.add_field(name="🎖️ Cargo no Grupo", value=cargo_grupo_nome, inline=True)
+    embed.add_field(name="📌 Status", value=cargo_atribuido_msg, inline=False)
+    embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Verificação")
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+    
+
 
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
