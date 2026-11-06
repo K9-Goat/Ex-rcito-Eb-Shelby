@@ -265,8 +265,23 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
 
     patentes_lista = list(PATENTES_CONFIG.keys())
     
+    # Descobre a posição da patente atual do membro e da nova patente escolhida
+    indice_atual = -1
+    for i, nome_patente in enumerate(patentes_lista):
+        cargo = discord.utils.get(interaction.guild.roles, name=nome_patente)
+        if cargo and cargo in membro.roles:
+            indice_atual = i
+            break
+
+    indice_novo = patentes_lista.index(cargo_patente_nova.name) if cargo_patente_nova.name in patentes_lista else -1
+
+    # Trava: Não permite rebaixar para um cargo igual ou superior!
+    if indice_atual != -1 and indice_novo >= indice_atual:
+        await interaction.response.send_message(f"❌ **REBAIXAMENTO NEGADO!** O cargo {cargo_patente_nova.mention} é igual ou superior à patente atual do militar.", ephemeral=True)
+        return
+
     try:
-        # Remove todas as outras patentes antigas que o membro possa ter
+        # Remove todas as patentes antigas
         for nome_pat in patentes_lista:
             c_velho = discord.utils.get(interaction.guild.roles, name=nome_pat)
             if c_velho and c_velho in membro.roles:
@@ -297,6 +312,7 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     except Exception as e:
         await interaction.response.send_message(f"❌ Ocorreu um erro ao rebaixar: {e}", ephemeral=True)
         
+    
 
 
 # --- 4. COMANDO: /rebaixar_varios ---
@@ -326,11 +342,24 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
     cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nova_nome)
     horas_cdp = config_nova["horas"]
     patentes_lista = list(PATENTES_CONFIG.keys())
+    indice_novo = patentes_lista.index(cargo_patente_nova.name) if cargo_patente_nova.name in patentes_lista else -1
     agora = datetime.datetime.now()
 
     for uid in ids_membros:
         membro = interaction.guild.get_member(int(uid))
         if not membro:
+            continue
+
+        # Verifica se o membro tem uma patente superior à que tentam rebaixá-lo
+        indice_atual = -1
+        for i, nome_patente in enumerate(patentes_lista):
+            cargo = discord.utils.get(interaction.guild.roles, name=nome_patente)
+            if cargo and cargo in membro.roles:
+                indice_atual = i
+                break
+
+        if indice_atual != -1 and indice_novo >= indice_atual:
+            erros.append(f"{membro.mention} (Patente igual/inferior à selecionada)")
             continue
 
         try:
@@ -359,10 +388,11 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
     if sucessos:
         embed.add_field(name="✅ Rebaixados com Sucesso", value=", ".join(sucessos), inline=False)
     if erros:
-        embed.add_field(name="❌ Falhas", value=", ".join(erros), inline=False)
+        embed.add_field(name="❌ Falhas / Inválidos", value=", ".join(erros), inline=False)
     embed.set_footer(text=f"Ação executada por {interaction.user.display_name}")
 
     await interaction.response.send_message(embed=embed)
+    
     
 
 
