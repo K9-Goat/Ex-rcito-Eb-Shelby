@@ -739,6 +739,14 @@ async def verificar(interaction: discord.Interaction, usuario_roblox: str):
     except Exception:
         pass
 
+    # Guarda a conta verificada para o comando /sincronizar
+    contas_verificadas[membro.id] = {
+        "id": roblox_user_id,
+        "name": roblox_name,
+        "display": roblox_display
+    }
+    
+
     # Embed de resposta
     embed = discord.Embed(
         title="🔗 Sincronização e Verificação Concluídas!",
