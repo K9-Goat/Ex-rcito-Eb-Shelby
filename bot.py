@@ -66,6 +66,10 @@ PATENTES_CONFIG = {
     "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "〘⚔️〙Oficiais Generais"},
 }
 
+
+contas_verificadas = {}
+
+
 historico_cdp = {}
 
 # --- EVENTO ON_READY OTIMIZADO ---
@@ -748,6 +752,108 @@ async def verificar(interaction: discord.Interaction, usuario_roblox: str):
 
     await interaction.followup.send(embed=embed, ephemeral=True)
     
+
+
+# --- COMANDO: /sincronizar ---
+@bot.tree.command(name="sincronizar", description="Atualiza os teus cargos do Discord caso tenhas sido promovido ou rebaixado no Roblox.")
+async def sincronizar(interaction: discord.Interaction):
+    membro = interaction.user
+
+    # Verifica se a pessoa já usou o /verificar antes
+    if membro.id not in contas_verificadas:
+        await interaction.response.send_message(
+            "❌ Ainda não estás verificado! Usa primeiro o comando `/verificar` com o teu nome do Roblox.",
+            ephemeral=True
+        )
+        return
+
+    await interaction.response.defer(ephemeral=True)
+
+    dados_roblox = contas_verificadas[membro.id]
+    roblox_user_id = dados_roblox["id"]
+    roblox_display = dados_roblox["display"]
+    roblox_name = dados_roblox["name"]
+
+    # Consulta o cargo atual do utilizador no grupo do Roblox
+    async with aiohttp.ClientSession() as session:
+        url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+        async with session.get(url_role) as resp_role:
+            if resp_role.status != 200:
+                await interaction.followup.send("❌ Erro ao consultar a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                return
+
+            roles_data = await resp_role.json()
+            cargo_grupo_nome = None
+
+            for g in roles_data.get("data", []):
+                if g["group"]["id"] == ROBLOX_GROUP_ID:
+                    cargo_grupo_nome = g["role"]["name"]
+                    break
+
+    if not cargo_grupo_nome:
+        await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
+        return
+
+    config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+    if not config_patente:
+        await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está registado na tabela `PATENTES_CONFIG`.", ephemeral=True)
+        return
+
+    cat_nome_nova = config_patente["categoria"]
+    patentes_lista = list(PATENTES_CONFIG.keys())
+    cargos_para_remover = []
+
+    # Remove patentes antigas diferentes da atual
+    for nome_patente in patentes_lista:
+        if nome_patente != cargo_grupo_nome:
+            cargo_antigo = discord.utils.get(interaction.guild.roles, name=nome_patente)
+            if cargo_antigo and cargo_antigo in membro.roles:
+                cargos_para_remover.append(cargo_antigo)
+
+    # Remove categorias antigas diferentes da atual
+    categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
+    for cat_nome in categorias_todas:
+        if cat_nome != cat_nome_nova:
+            cat_antiga = discord.utils.get(interaction.guild.roles, name=cat_nome)
+            if cat_antiga and cat_antiga in membro.roles:
+                cargos_para_remover.append(cat_antiga)
+
+    if cargos_para_remover:
+        await membro.remove_roles(*cargos_para_remover)
+
+    # Adiciona a patente e categoria atuais do grupo
+    cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
+    cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
+
+    cargos_para_adicionar = []
+    if cargo_novo and cargo_novo not in membro.roles:
+        cargos_para_adicionar.append(cargo_novo)
+    if cargo_cat_nova and cargo_cat_nova not in membro.roles:
+        cargos_para_adicionar.append(cargo_cat_nova)
+
+    if cargos_para_adicionar:
+        await membro.add_roles(*cargos_para_adicionar)
+
+    # Atualiza o Nickname com a nova tag
+    tag = config_patente["tag"]
+    try:
+        await membro.edit(nick=f"{tag} {roblox_display}"[:32])
+    except Exception:
+        pass
+
+    embed = discord.Embed(
+        title="🔄 Patente Sincronizada!",
+        description="Os teus cargos foram atualizados de acordo com a tua patente atual no grupo do Roblox.",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
+    embed.add_field(name="🎖️ Patente Atual", value=cargo_grupo_nome, inline=True)
+    embed.add_field(name="📁 Categoria", value=cat_nome_nova, inline=True)
+    embed.set_footer(text="Exército Brasileiro do Shelby • Sincronização")
+
+    await interaction.followup.send(embed=embed, ephemeral=True)
+                               
+
 
 
 
