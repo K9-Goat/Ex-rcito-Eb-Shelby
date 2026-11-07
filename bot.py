@@ -297,13 +297,14 @@ async def sincronizar(interaction: discord.Interaction):
     
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-
 # --- 3. COMANDO: /promover ---
 @bot.tree.command(name="promover", description="Promove um militar respeitando as permissões da hierarquia.")
 async def promover(interaction: discord.Interaction, membro: discord.Member, cargo_patente: discord.Role):
+    await interaction.response.defer()
+
     config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.response.send_message(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -311,16 +312,16 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
     if nivel_autor <= 3:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Praças, Graduados e Praças Especiais não têm permissão para promover.", ephemeral=True)
         return
     elif nivel_autor == 4 and nivel_destino > 1:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
         return
     elif nivel_autor == 5 and nivel_destino > 3:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover Praças, Graduados e Praças Especiais.", ephemeral=True)
         return
     elif nivel_autor == 6 and nivel_destino > 5:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Cargos Generais.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Cargos Generais.", ephemeral=True)
         return
 
     agora = datetime.datetime.now()
@@ -328,29 +329,35 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
         restante = historico_cdp[membro.id] - agora
         horas = restante.seconds // 3600
         minutos = (restante.seconds % 3600) // 60
-        await interaction.response.send_message(f"❌ **PROMOÇÃO BLOQUEADA!** {membro.mention} ainda está em CDP. Faltam {horas}h {minutos}m.", ephemeral=True)
+        await interaction.followup.send(f"❌ **PROMOÇÃO BLOQUEADA!** {membro.mention} ainda está em CDP. Faltam {horas}h {minutos}m.", ephemeral=True)
         return
 
-    patentes_lista = list(PATENTES_CONFIG.keys())
-    for nome_patente in patentes_lista:
-        if nome_patente != cargo_patente.name:
-            cargo_velho = discord.utils.get(interaction.guild.roles, name=nome_patente)
-            if cargo_velho and cargo_velho in membro.roles:
-                await membro.remove_roles(cargo_velho)
+    # Remove patentes antigas e categorias diferentes da nova
+    categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
+    cargos_para_remover = [
+        r for r in membro.roles
+        if (r.name in PATENTES_CONFIG and r.name != cargo_patente.name)
+        or (r.name in categorias_todas and r.name != cat_destino)
+    ]
 
     cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
-    cargos_para_adicionar = [cargo_patente]
-    if cargo_categoria:
+    cargos_para_adicionar = []
+    if cargo_patente not in membro.roles:
+        cargos_para_adicionar.append(cargo_patente)
+    if cargo_categoria and cargo_categoria not in membro.roles:
         cargos_para_adicionar.append(cargo_categoria)
 
-    await membro.add_roles(*cargos_para_adicionar)
-
-    tag = config_novo["tag"]
-    nome_limpo = membro.display_name.split("]")[-1].strip()
     try:
+        if cargos_para_remover:
+            await membro.remove_roles(*cargos_para_remover)
+        if cargos_para_adicionar:
+            await membro.add_roles(*cargos_para_adicionar)
+        tag = config_novo["tag"]
+        nome_limpo = membro.display_name.split("]")[-1].strip()
         await membro.edit(nick=f"{tag} {nome_limpo}"[:32])
-    except Exception:
-        pass
+    except Exception as e:
+        await interaction.followup.send(f"❌ Erro ao aplicar cargos ou apelido: {e}", ephemeral=True)
+        return
 
     horas_cdp = config_novo["horas"]
     data_liberacao = agora + datetime.timedelta(hours=horas_cdp)
@@ -362,15 +369,17 @@ async def promover(interaction: discord.Interaction, membro: discord.Member, car
     embed.add_field(name="📅 Próxima Promoção", value=data_liberacao.strftime("%d/%m/%Y às %H:%M"), inline=True)
     embed.set_footer(text=f"Promovido por: {interaction.user.display_name}")
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 # --- 4. COMANDO: /promover_varios ---
 @bot.tree.command(name="promover_varios", description="Promove vários militares de uma vez (mencione-os).")
 async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_patente: discord.Role):
+    await interaction.response.defer()
+
     config_novo = PATENTES_CONFIG.get(cargo_patente.name)
     if not config_novo:
-        await interaction.response.send_message(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente.name}** não está registrado na tabela de CDP.", ephemeral=True)
         return
 
     nivel_autor = verificar_nivel_autor(interaction.user)
@@ -378,28 +387,28 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
     nivel_destino = HIERARQUIA_CATEGORIAS.get(cat_destino, 0)
 
     if nivel_autor <= 3:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Não tens permissão para promover.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Não tens permissão para promover.", ephemeral=True)
         return
     elif nivel_autor == 4 and nivel_destino > 1:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Subalternos só podem promover Praças.", ephemeral=True)
         return
     elif nivel_autor == 5 and nivel_destino > 3:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover até Praças Especiais.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Intermediários só podem promover até Praças Especiais.", ephemeral=True)
         return
     elif nivel_autor == 6 and nivel_destino > 5:
-        await interaction.response.send_message("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Oficiais Generais.", ephemeral=True)
+        await interaction.followup.send("❌ **PROMOÇÃO NEGADA!** Oficiais Superiores não podem promover para Oficiais Generais.", ephemeral=True)
         return
 
     ids_membros = re.findall(r'<@!?(\d+)>', mencoes)
     if not ids_membros:
-        await interaction.response.send_message("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
+        await interaction.followup.send("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
         return
 
     agora = datetime.datetime.now()
     sucessos, erros = [], []
     cargo_categoria = discord.utils.get(interaction.guild.roles, name=cat_destino)
     horas_cdp = config_novo["horas"]
-    patentes_lista = list(PATENTES_CONFIG.keys())
+    categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
 
     for uid in ids_membros:
         membro = interaction.guild.get_member(int(uid))
@@ -410,16 +419,21 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
             continue
 
         try:
-            for nome_pat in patentes_lista:
-                if nome_pat != cargo_patente.name:
-                    c_velho = discord.utils.get(interaction.guild.roles, name=nome_pat)
-                    if c_velho and c_velho in membro.roles:
-                        await membro.remove_roles(c_velho)
+            cargos_para_remover = [
+                r for r in membro.roles
+                if (r.name in PATENTES_CONFIG and r.name != cargo_patente.name)
+                or (r.name in categorias_todas and r.name != cat_destino)
+            ]
+            if cargos_para_remover:
+                await membro.remove_roles(*cargos_para_remover)
 
-            cargos_add = [cargo_patente]
-            if cargo_categoria:
+            cargos_add = []
+            if cargo_patente not in membro.roles:
+                cargos_add.append(cargo_patente)
+            if cargo_categoria and cargo_categoria not in membro.roles:
                 cargos_add.append(cargo_categoria)
-            await membro.add_roles(*cargos_add)
+            if cargos_add:
+                await membro.add_roles(*cargos_add)
 
             tag = config_novo["tag"]
             nome_limpo = membro.display_name.split("]")[-1].strip()
@@ -437,24 +451,26 @@ async def promover_varios(interaction: discord.Interaction, mencoes: str, cargo_
         embed.add_field(name="❌ Falhas / Em CDP", value=", ".join(erros), inline=False)
     embed.set_footer(text=f"Ação executada por {interaction.user.display_name}")
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 # --- 5. COMANDO: /rebaixar ---
 @bot.tree.command(name="rebaixar", description="Rebaixa um militar, atualiza os cargos, apelido e reseta o CDP.")
 async def rebaixar(interaction: discord.Interaction, membro: discord.Member, cargo_patente_nova: discord.Role):
+    await interaction.response.defer()
+
     nivel_autor = 0
     for role in interaction.user.roles:
         if role.name in CARGOS_REBAIXAR_PERMISSAO:
             nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
 
     if nivel_autor == 0:
-        await interaction.response.send_message("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
+        await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
         return
 
     config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.response.send_message(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
         return
 
     patentes_lista = list(PATENTES_CONFIG.keys())
@@ -468,22 +484,31 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
     indice_novo = patentes_lista.index(cargo_patente_nova.name) if cargo_patente_nova.name in patentes_lista else -1
 
     if indice_atual != -1 and indice_novo >= indice_atual:
-        await interaction.response.send_message(f"❌ **REBAIXAMENTO NEGADO!** O cargo {cargo_patente_nova.mention} é igual ou superior à patente atual do militar.", ephemeral=True)
+        await interaction.followup.send(f"❌ **REBAIXAMENTO NEGADO!** O cargo {cargo_patente_nova.mention} é igual ou superior à patente atual do militar.", ephemeral=True)
         return
 
     try:
-        for nome_pat in patentes_lista:
-            c_velho = discord.utils.get(interaction.guild.roles, name=nome_pat)
-            if c_velho and c_velho in membro.roles:
-                await membro.remove_roles(c_velho)
-
-        cargos_adicionar = [cargo_patente_nova]
         cat_nova_nome = config_nova["categoria"]
+        categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
+
+        # Remove patentes antigas e categorias diferentes da nova
+        cargos_para_remover = [
+            r for r in membro.roles
+            if (r.name in PATENTES_CONFIG and r.name != cargo_patente_nova.name)
+            or (r.name in categorias_todas and r.name != cat_nova_nome)
+        ]
+        if cargos_para_remover:
+            await membro.remove_roles(*cargos_para_remover)
+
+        cargos_adicionar = []
+        if cargo_patente_nova not in membro.roles:
+            cargos_adicionar.append(cargo_patente_nova)
         cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nova_nome)
-        if cargo_cat_nova:
+        if cargo_cat_nova and cargo_cat_nova not in membro.roles:
             cargos_adicionar.append(cargo_cat_nova)
 
-        await membro.add_roles(*cargos_adicionar)
+        if cargos_adicionar:
+            await membro.add_roles(*cargos_adicionar)
 
         tag = config_nova["tag"]
         nome_limpo = membro.display_name.split("]")[-1].strip()
@@ -495,30 +520,33 @@ async def rebaixar(interaction: discord.Interaction, membro: discord.Member, car
         embed = discord.Embed(title="⚠️ Rebaixamento Realizado", description=f"O militar {membro.mention} foi rebaixado para **{cargo_patente_nova.name}**.", color=discord.Color.orange())
         embed.set_footer(text=f"Rebaixado por {interaction.user.display_name}")
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
     except Exception as e:
-        await interaction.response.send_message(f"❌ Ocorreu um erro ao rebaixar: {e}", ephemeral=True)
+        await interaction.followup.send(f"❌ Ocorreu um erro ao rebaixar: {e}", ephemeral=True)
+
 
 # --- 6. COMANDO: /rebaixar_varios ---
 @bot.tree.command(name="rebaixar_varios", description="Rebaixa vários militares de uma vez (mencione-os).")
 async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_patente_nova: discord.Role):
+    await interaction.response.defer()
+
     nivel_autor = 0
     for role in interaction.user.roles:
         if role.name in CARGOS_REBAIXAR_PERMISSAO:
             nivel_autor = max(nivel_autor, CARGOS_REBAIXAR_PERMISSAO[role.name])
 
     if nivel_autor == 0:
-        await interaction.response.send_message("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
+        await interaction.followup.send("❌ **REBAIXAMENTO NEGADO!** Apenas membros autorizados podem rebaixar.", ephemeral=True)
         return
 
     config_nova = PATENTES_CONFIG.get(cargo_patente_nova.name)
     if not config_nova:
-        await interaction.response.send_message(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
+        await interaction.followup.send(f"❌ O cargo **{cargo_patente_nova.name}** não está registrado na tabela.", ephemeral=True)
         return
 
     ids_membros = re.findall(r'<@!?(\d+)>', mencoes)
     if not ids_membros:
-        await interaction.response.send_message("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
+        await interaction.followup.send("❌ Nenhum militar válido foi mencionado.", ephemeral=True)
         return
 
     sucessos, erros = [], []
@@ -526,6 +554,7 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
     cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nova_nome)
     horas_cdp = config_nova["horas"]
     patentes_lista = list(PATENTES_CONFIG.keys())
+    categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
     indice_novo = patentes_lista.index(cargo_patente_nova.name) if cargo_patente_nova.name in patentes_lista else -1
     agora = datetime.datetime.now()
 
@@ -546,16 +575,22 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
             continue
 
         try:
-            for nome_pat in patentes_lista:
-                c_velho = discord.utils.get(interaction.guild.roles, name=nome_pat)
-                if c_velho and c_velho in membro.roles:
-                    await membro.remove_roles(c_velho)
+            cargos_para_remover = [
+                r for r in membro.roles
+                if (r.name in PATENTES_CONFIG and r.name != cargo_patente_nova.name)
+                or (r.name in categorias_todas and r.name != cat_nova_nome)
+            ]
+            if cargos_para_remover:
+                await membro.remove_roles(*cargos_para_remover)
 
-            cargos_adicionar = [cargo_patente_nova]
-            if cargo_cat_nova:
+            cargos_adicionar = []
+            if cargo_patente_nova not in membro.roles:
+                cargos_adicionar.append(cargo_patente_nova)
+            if cargo_cat_nova and cargo_cat_nova not in membro.roles:
                 cargos_adicionar.append(cargo_cat_nova)
 
-            await membro.add_roles(*cargos_adicionar)
+            if cargos_adicionar:
+                await membro.add_roles(*cargos_adicionar)
 
             tag = config_nova["tag"]
             nome_limpo = membro.display_name.split("]")[-1].strip()
@@ -573,8 +608,8 @@ async def rebaixar_varios(interaction: discord.Interaction, mencoes: str, cargo_
         embed.add_field(name="❌ Falhas / Inválidos", value=", ".join(erros), inline=False)
     embed.set_footer(text=f"Ação executada por {interaction.user.display_name}")
 
-    await interaction.response.send_message(embed=embed)
-
+    await interaction.followup.send(embed=embed)
+        
 
 # --- 7. COMANDO: /cdp ---
 @bot.tree.command(name="cdp", description="Consulta o tempo restante de CDP de um militar.")
