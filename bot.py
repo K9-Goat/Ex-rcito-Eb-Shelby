@@ -686,13 +686,18 @@ async def verificar(interaction: discord.Interaction, usuario_roblox: str):
         await interaction.followup.send(f"❌ Encontramos a conta **{roblox_display}**, mas ela não pertence ao grupo do Exército no Roblox.", ephemeral=True)
         return
 
-    # 3. Identifica a patente e a categoria correspondentes na configuração do bot
-    config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
-    membro = interaction.user
+        # 3. Identifica a patente e a categoria correspondentes na configuração do bot
+    config_patente = None
+    for nome_cfg, cfg_data in PATENTES_CONFIG.items():
+        if nome_cfg.strip().lower() == cargo_grupo_nome.strip().lower():
+            config_patente = cfg_data
+            cargo_grupo_nome = nome_cfg
+            break
 
     if not config_patente:
         await interaction.followup.send(f"⚠️ O cargo **{cargo_grupo_nome}** do Roblox não está registado na tabela `PATENTES_CONFIG` do bot.", ephemeral=True)
         return
+        
 
     cat_nome_nova = config_patente["categoria"]
     patentes_lista = list(PATENTES_CONFIG.keys())
@@ -802,10 +807,17 @@ async def sincronizar(interaction: discord.Interaction):
         await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
         return
 
-    config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+        config_patente = None
+    for nome_cfg, cfg_data in PATENTES_CONFIG.items():
+        if nome_cfg.strip().lower() == cargo_grupo_nome.strip().lower():
+            config_patente = cfg_data
+            cargo_grupo_nome = nome_cfg
+            break
+
     if not config_patente:
         await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está registado na tabela `PATENTES_CONFIG`.", ephemeral=True)
         return
+        
 
     cat_nome_nova = config_patente["categoria"]
     patentes_lista = list(PATENTES_CONFIG.keys())
