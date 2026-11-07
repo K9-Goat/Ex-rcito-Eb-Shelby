@@ -779,7 +779,6 @@ async def verificar(interaction: discord.Interaction, usuario_roblox: str):
     await interaction.followup.send(embed=embed, ephemeral=True)
     
 
-
 # --- COMANDO: /sincronizar ---
 @bot.tree.command(name="sincronizar", description="Atualiza os teus cargos do Discord caso tenhas sido promovido ou rebaixado no Roblox.")
 async def sincronizar(interaction: discord.Interaction):
@@ -876,29 +875,18 @@ async def sincronizar(interaction: discord.Interaction):
         except Exception:
             pass
 
-    # Tenta atualizar o nickname se necessário
-    try:
-        novo_apelido = f"{cargo_grupo_nome} | {roblox_display}"
-        if len(novo_apelido) <= 32:
-            await membro.edit(nick=novo_apelido)
-    except Exception:
-        pass
-
     embed = discord.Embed(
         title="🔄 Sincronização Concluída!",
         description=f"Os teus cargos foram atualizados com base no teu rank atual no Roblox.",
         color=discord.Color.green()
     )
     embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
-    embed.add_field(name="🎖️ Patente Atual", value=cargo_grupo_nome, inline=True)
-    embed.add_field(name="📂 Categoria", value=cat_nome_nova, inline=True)
-    embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Sincronização")
+    embed.add_field(name="🎖️ Patente Atribuída", value=cargo_grupo_nome, inline=True)
+    embed.add_field(name="📂 Categoria Atribuída", value=cat_nome_nova, inline=True)
+    embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Verificação")
     
     await interaction.followup.send(embed=embed, ephemeral=True)
     
-                               
-
-
 
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
