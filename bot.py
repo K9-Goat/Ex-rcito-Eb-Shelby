@@ -741,42 +741,97 @@ async def verificar(interaction: discord.Interaction, usuario_roblox: str):
     cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
     cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
 
+# --- COMANDO: /verificar ---
+@bot.tree.command(name="verificar", description="Verifica a tua conta do Roblox e atribui os cargos correspondentes no Discord.")
+@app_commands.describe(username="O teu nome de utilizador (username) no Roblox")
+async def verificar(interaction: discord.Interaction, username: str):
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        # Consulta o ID do Roblox através do username
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            url_user = "https://users.roblox.com/v1/usernames/users"
+            payload = {"usernames": [username], "excludeBannedUsers": True}
+            async with session.post(url_user, json=payload) as resp_user:
+                if resp_user.status != 200:
+                    await interaction.followup.send("❌ Erro ao comunicar com a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                    return
+                
+                data_user = await resp_user.json()
+                users = data_user.get("data", [])
+                if not users:
+                    await interaction.followup.send(f"❌ Não foi encontrada nenhuma conta no Roblox com o nome **{username}**.", ephemeral=True)
+                    return
+                
+                roblox_user_id = users[0]["id"]
+                roblox_display = users[0]["displayName"]
+                roblox_name = users[0]["name"]
+
+            # Consulta os cargos do utilizador no grupo do Roblox
+            url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+            async with session.get(url_role) as resp_role:
+                if resp_role.status != 200:
+                    await interaction.followup.send("❌ Erro ao consultar os grupos do Roblox.", ephemeral=True)
+                    return
+                
+                roles_data = await resp_role.json()
+                cargo_grupo_nome = None
+                for g in roles_data.get("data", []):
+                    if g["group"]["id"] == ROBLOX_GROUP_ID:
+                        cargo_grupo_nome = g["role"]["name"]
+                        break
+    except Exception:
+        await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
+        return
+
+    if not cargo_grupo_nome:
+        await interaction.followup.send(f"❌ A tua conta (**{roblox_display}**) não está no grupo oficial do Exército no Roblox.", ephemeral=True)
+        return
+
+    # Procura a patente de forma exata no dicionário de configuração
+    config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+    if not config_patente:
+        await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está mapeado nas patentes do bot.", ephemeral=True)
+        return
+
+    cat_nome = config_patente["categoria"]
+
+    # Guarda os dados na memória do bot
+    contas_verificadas[interaction.user.id] = {
+        "id": roblox_user_id,
+        "display": roblox_display,
+        "name": roblox_name
+    }
+
+    # Atribui os cargos no Discord
+    membro = interaction.user
+    cargo_novo = discord.utils.get(membro.guild.roles, name=cargo_grupo_nome)
+    categoria_nova = discord.utils.get(membro.guild.roles, name=cat_nome)
+
     cargos_para_adicionar = []
-    if cargo_novo:
+    if cargo_novo and cargo_novo not in membro.roles:
         cargos_para_adicionar.append(cargo_novo)
-    if cargo_cat_nova:
-        cargos_para_adicionar.append(cargo_cat_nova)
+    if categoria_nova and categoria_nova not in membro.roles:
+        cargos_para_adicionar.append(categoria_nova)
 
     if cargos_para_adicionar:
-        await membro.add_roles(*cargos_para_adicionar)
+        try:
+            await membro.add_roles(*cargos_para_adicionar)
+        except Exception:
+            pass
 
-    # Atualiza o Nickname do membro no Discord com a tag da nova patente
-    tag = config_patente["tag"]
-    try:
-        await membro.edit(nick=f"{tag} {roblox_display}"[:32])
-    except Exception:
-        pass
-
-    # Guarda a conta verificada para o comando /sincronizar
-    contas_verificadas[membro.id] = {
-        "id": roblox_user_id,
-        "name": roblox_name,
-        "display": roblox_display
-    }
-    
-
-    # Embed de resposta
     embed = discord.Embed(
-        title="🔗 Sincronização e Verificação Concluídas!",
-        description=f"A tua conta foi verificada e os teus cargos foram atualizados de acordo com o Roblox.",
+        title="✅ Verificação Concluída!",
+        description="A tua conta foi verificada com sucesso e os teus cargos foram atribuídos.",
         color=discord.Color.green()
     )
     embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
-    embed.add_field(name="🎖️ Patente Atribuída", value=cargo_grupo_nome, inline=True)
-    embed.add_field(name="📁 Categoria Atribuída", value=cat_nome_nova, inline=True)
-    embed.set_footer(text="Exército Brasileiro do Shelby • Sistema de Verificação")
+    embed.add_field(name="🎖️ Patente", value=cargo_grupo_nome, inline=True)
+    embed.add_field(name="📂 Categoria", value=cat_nome, inline=True)
+    embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Verificação")
 
     await interaction.followup.send(embed=embed, ephemeral=True)
+    
     
 
 # --- COMANDO: /sincronizar ---
