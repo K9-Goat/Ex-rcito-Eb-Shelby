@@ -819,13 +819,12 @@ async def sincronizar(interaction: discord.Interaction):
     except Exception:
         await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
         return
-        
-        
+
     if not cargo_grupo_nome:
         await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
         return
 
-        config_patente = None
+    config_patente = None
     for nome_cfg, cfg_data in PATENTES_CONFIG.items():
         if nome_cfg.strip().lower() == cargo_grupo_nome.strip().lower():
             config_patente = cfg_data
@@ -833,9 +832,8 @@ async def sincronizar(interaction: discord.Interaction):
             break
 
     if not config_patente:
-        await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está registado na tabela `PATENTES_CONFIG`.", ephemeral=True)
+        await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está mapeado nas patentes do bot.", ephemeral=True)
         return
-        
 
     cat_nome_nova = config_patente["categoria"]
     patentes_lista = list(PATENTES_CONFIG.keys())
@@ -857,39 +855,47 @@ async def sincronizar(interaction: discord.Interaction):
                 cargos_para_remover.append(cat_antiga)
 
     if cargos_para_remover:
-        await membro.remove_roles(*cargos_para_remover)
+        try:
+            await membro.remove_roles(*cargos_para_remover)
+        except Exception:
+            pass
 
-    # Adiciona a patente e categoria atuais do grupo
+    # Adiciona a nova patente e categoria
     cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
-    cargo_cat_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
+    categoria_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
 
     cargos_para_adicionar = []
     if cargo_novo and cargo_novo not in membro.roles:
         cargos_para_adicionar.append(cargo_novo)
-    if cargo_cat_nova and cargo_cat_nova not in membro.roles:
-        cargos_para_adicionar.append(cargo_cat_nova)
+    if categoria_nova and categoria_nova not in membro.roles:
+        cargos_para_adicionar.append(categoria_nova)
 
     if cargos_para_adicionar:
-        await membro.add_roles(*cargos_para_adicionar)
+        try:
+            await membro.add_roles(*cargos_para_adicionar)
+        except Exception:
+            pass
 
-    # Atualiza o Nickname com a nova tag
-    tag = config_patente["tag"]
+    # Tenta atualizar o nickname se necessário
     try:
-        await membro.edit(nick=f"{tag} {roblox_display}"[:32])
+        novo_apelido = f"{cargo_grupo_nome} | {roblox_display}"
+        if len(novo_apelido) <= 32:
+            await membro.edit(nick=novo_apelido)
     except Exception:
         pass
 
     embed = discord.Embed(
-        title="🔄 Patente Sincronizada!",
-        description="Os teus cargos foram atualizados de acordo com a tua patente atual no grupo do Roblox.",
-        color=discord.Color.blue()
+        title="🔄 Sincronização Concluída!",
+        description=f"Os teus cargos foram atualizados com base no teu rank atual no Roblox.",
+        color=discord.Color.green()
     )
     embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
     embed.add_field(name="🎖️ Patente Atual", value=cargo_grupo_nome, inline=True)
-    embed.add_field(name="📁 Categoria", value=cat_nome_nova, inline=True)
-    embed.set_footer(text="Exército Brasileiro do Shelby • Sincronização")
-
+    embed.add_field(name="📂 Categoria", value=cat_nome_nova, inline=True)
+    embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Sincronização")
+    
     await interaction.followup.send(embed=embed, ephemeral=True)
+    
                                
 
 
