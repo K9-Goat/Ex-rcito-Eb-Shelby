@@ -800,7 +800,7 @@ async def sincronizar(interaction: discord.Interaction):
     roblox_display = dados_roblox["display"]
     roblox_name = dados_roblox["name"]
 
-            try:
+    try:
         # Consulta o cargo atual do utilizador no grupo do Roblox com timeout de 10s
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
             url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
@@ -819,6 +819,7 @@ async def sincronizar(interaction: discord.Interaction):
     except Exception:
         await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
         return
+        
         
     if not cargo_grupo_nome:
         await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
