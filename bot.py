@@ -56,7 +56,7 @@ PATENTES_CONFIG = {
     "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "〘⭐️〙Oficiais Intermediário"},
 
     # Oficiais Superiores
-    "[MAJ] Major": {"horas": 60, "tag": "[MAJ]", "categoria": "〘🏅〙Oficiais Superiores"},
+    "[MJ] Major": {"horas": 60, "tag": "[MJ]", "categoria": "〘🏅〙Oficiais Superiores"},
     "[TEN-CEL] Tenente-Coronel": {"horas": 65, "tag": "[TEN-CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
     "[CEL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
 
