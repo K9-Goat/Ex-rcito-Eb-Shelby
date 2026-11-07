@@ -39,9 +39,9 @@ PATENTES_CONFIG = {
     "[CB] Cabo": {"horas": 12, "tag": "[CB]", "categoria": "〘🌾〙  Militares Praças"},
 
     # Graduados
-    "[3 SGT] Terceiro-Sargento": {"horas": 15, "tag": "[3 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
-    "[2 SGT] Segundo-Sargento": {"horas": 20, "tag": "[2 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
-    "[1 SGT] Primeiro-Sargento": {"horas": 25, "tag": "[1 SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[T-SGT] Terceiro-Sargento": {"horas": 15, "tag": "[T-SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[S-SGT] Segundo-Sargento": {"horas": 20, "tag": "[S-SGT]", "categoria": "〘🎓〙 Militares Graduados"},
+    "[P-SGT] Primeiro-Sargento": {"horas": 25, "tag": "[P-SGT]", "categoria": "〘🎓〙 Militares Graduados"},
     "[ST] Subtenente": {"horas": 30, "tag": "[ST]", "categoria": "〘🎓〙 Militares Graduados"},
 
     # Praças Especiais
@@ -49,8 +49,8 @@ PATENTES_CONFIG = {
 
     # Oficiais Subalternos
     "[AAO] Aspirante a Oficial": {"horas": 40, "tag": "[AAO]", "categoria": "〘🗡️〙Oficiais Subalternos"},
-    "[2 TEN] Segundo-Tenente": {"horas": 45, "tag": "[2 TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
-    "[1 TEN] Primeiro-Tenente": {"horas": 50, "tag": "[1 TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
+    "[S-TN] Segundo-Tenente": {"horas": 45, "tag": "[S-TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
+    "[P-TN] Primeiro-Tenente": {"horas": 50, "tag": "[P-TEN]", "categoria": "〘🗡️〙Oficiais Subalternos"},
 
     # Oficiais Intermediários
     "[CAP] Capitão": {"horas": 55, "tag": "[CAP]", "categoria": "〘⭐️〙Oficiais Intermediário"},
@@ -61,9 +61,9 @@ PATENTES_CONFIG = {
     "[CEL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
 
     # Oficiais Generais
-    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
-    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN DV]", "categoria": "〘⚔️〙Oficiais Generais"},
-    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN EX]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN-BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN-DV]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN-EX]", "categoria": "〘⚔️〙Oficiais Generais"},
 }
 
 
