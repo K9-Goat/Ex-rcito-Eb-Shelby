@@ -648,31 +648,44 @@ ROBLOX_GROUP_ID = 674505905  # <--- Coloca aqui o ID numérico do grupo do Roblo
 async def verificar(interaction: discord.Interaction, usuario_roblox: str):
     await interaction.response.defer(ephemeral=True)
 
-    async with aiohttp.ClientSession() as session:
-        # 1. Busca o ID do utilizador no Roblox pelo nome
-        url_user = "https://users.roblox.com/v1/usernames/users"
-        payload = {"usernames": [usuario_roblox], "excludeBannedUsers": True}
-        
-        async with session.post(url_user, json=payload) as resp:
-            if resp.status != 200:
-                await interaction.followup.send("❌ Erro ao comunicar com a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
-                return
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            # 1. Busca o ID do utilizador no Roblox pelo nome
+            url_user = "https://users.roblox.com/v1/usernames/users"
+            payload = {"usernames": [usuario_roblox], "excludeBannedUsers": True}
             
-            data = await resp.json()
-            if not data.get("data"):
-                await interaction.followup.send(f"❌ O utilizador do Roblox **{usuario_roblox}** não foi encontrado.", ephemeral=True)
-                return
-            
-            roblox_user_id = data["data"][0]["id"]
-            roblox_display = data["data"][0]["displayName"]
-            roblox_name = data["data"][0]["name"]
+            async with session.post(url_user, json=payload) as resp:
+                if resp.status != 200:
+                    await interaction.followup.send("❌ Erro ao comunicar com a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                    return
+                
+                data = await resp.json()
+                if not data.get("data"):
+                    await interaction.followup.send(f"❌ O utilizador do Roblox **{usuario_roblox}** não foi encontrado.", ephemeral=True)
+                    return
+                
+                roblox_user_id = data["data"][0]["id"]
+                roblox_display = data["data"][0]["displayName"]
+                roblox_name = data["data"][0]["name"]
 
-        # 2. Consulta o cargo do utilizador no grupo oficial do Roblox
-        url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
-        async with session.get(url_role) as resp_role:
-            if resp_role.status != 200:
-                await interaction.followup.send("❌ Erro ao consultar os grupos na API do Roblox.", ephemeral=True)
-                return
+            # 2. Consulta o cargo do utilizador no grupo oficial do Roblox
+            url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+            async with session.get(url_role) as resp_role:
+                if resp_role.status != 200:
+                    await interaction.followup.send("❌ Erro ao consultar os grupos na API do Roblox.", ephemeral=True)
+                    return
+                
+                roles_data = await resp_role.json()
+                cargo_grupo_nome = None
+
+                for g in roles_data.get("data", []):
+                    if g["group"]["id"] == ROBLOX_GROUP_ID:
+                        cargo_grupo_nome = g["role"]["name"]
+                        break
+    except Exception as e:
+        await interaction.followup.send(f"❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
+        return
+        
             
             roles_data = await resp_role.json()
             cargo_grupo_nome = None
@@ -787,22 +800,26 @@ async def sincronizar(interaction: discord.Interaction):
     roblox_display = dados_roblox["display"]
     roblox_name = dados_roblox["name"]
 
-    # Consulta o cargo atual do utilizador no grupo do Roblox
-    async with aiohttp.ClientSession() as session:
-        url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
-        async with session.get(url_role) as resp_role:
-            if resp_role.status != 200:
-                await interaction.followup.send("❌ Erro ao consultar a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
-                return
+        try:
+        # Consulta o cargo atual do utilizador no grupo do Roblox com timeout de 10s
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+            async with session.get(url_role) as resp_role:
+                if resp_role.status != 200:
+                    await interaction.followup.send("❌ Erro ao consultar a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                    return
 
-            roles_data = await resp_role.json()
-            cargo_grupo_nome = None
+                roles_data = await resp_role.json()
+                cargo_grupo_nome = None
 
-            for g in roles_data.get("data", []):
-                if g["group"]["id"] == ROBLOX_GROUP_ID:
-                    cargo_grupo_nome = g["role"]["name"]
-                    break
-
+                for g in roles_data.get("data", []):
+                    if g["group"]["id"] == ROBLOX_GROUP_ID:
+                        cargo_grupo_nome = g["role"]["name"]
+                        break
+    except Exception:
+        await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
+        return
+        
     if not cargo_grupo_nome:
         await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
         return
