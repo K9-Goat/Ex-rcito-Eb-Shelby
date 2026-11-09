@@ -62,7 +62,7 @@ PATENTES_CONFIG = {
     "[CEL] Coronel": {"horas": 70, "tag": "[CEL]", "categoria": "〘🏅〙Oficiais Superiores"},
 
     # Oficiais Generais
-    "[GEN-BDA] General de Brigada": {"horas": 75, "tag": "[GEN-BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
+    "[GEN-BDA] General de brigada": {"horas": 75, "tag": "[GEN-BDA]", "categoria": "〘⚔️〙Oficiais Generais"},
     "[GEN-DV] General de Divisão": {"horas": 80, "tag": "[GEN-DV]", "categoria": "〘⚔️〙Oficiais Generais"},
     "[GEN-EX] General de Exército": {"horas": 85, "tag": "[GEN-EX]", "categoria": "〘⚔️〙Oficiais Generais"},
 }
