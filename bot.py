@@ -798,6 +798,52 @@ async def informacoes(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
+# --- CLASSE PARA OS BOTÕES DO PAINEL ---
+class PainelVerificacaoView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None) # Timeout None para os botões nunca expirarem
+
+    # Botão 1: Sincronizar (Executa a lógica de sincronização)
+    @discord.ui.button(label="Sincronizar agora", style=discord.ButtonStyle.green, emoji="🔄", custom_id="btn_sincronizar")
+    async def btn_sincronizar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Aqui podes chamar diretamente a lógica do sincronizar ou avisar o user
+        await interaction.response.send_message("🔄 A processar a tua sincronização...", ephemeral=True)
+        # (Opcional: podes invocar a lógica do comando /sincronizar aqui se quiseres)
+
+    # Botão 2: Vincular Conta (Link externo)
+    @discord.ui.button(label="Vincular conta", style=discord.ButtonStyle.blurple, emoji="🔗", custom_id="btn_vincular")
+    async def btn_vincular(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("🔗 Para vincular, utiliza o comando `/verificar [teu_nick_roblox]` aqui no Discord!", ephemeral=True)
+
+    # Botão 3: Problema? (Botão de suporte)
+    @discord.ui.button(label="Problema?", style=discord.ButtonStyle.red, emoji="⚠️", custom_id="btn_problema")
+    async def btn_problema(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("⚠️ Se tens algum problema com a verificação, entra em contacto com a Administração ou abre um ticket.", ephemeral=True)
+
+
+# --- COMANDO PARA ENVIAR O PAINEL ---
+@bot.tree.command(name="painel_verificacao", description="Envia o painel oficial de verificação para o canal (Apenas Administração).")
+@app_commands.checks.has_permissions(administrator=True)
+async def painel_verificacao(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🪖 Verificação • Exército Brasileiro do Shelby",
+        description=(
+            "Vincula a tua conta do Roblox ao Discord pra receber "
+            "automaticamente os cargos do seu rank (Exército, divisões, administração).\n\n"
+            "🔄 **Já vinculou?** Clique em **Sincronizar agora** pra atualizar seus cargos com base no rank atual.\n\n"
+            "🔗 **Primeira vez?** Utilize o comando `/verificar [seu_usuario_roblox]` para registrar a sua conta."
+        ),
+        color=discord.Color.dark_theme()
+    )
+    embed.set_footer(text="Exército Brasileiro do Shelby · Sincronização automática")
+
+    # Envia a mensagem com os botões incorporados
+    await interaction.channel.send(embed=embed, view=PainelVerificacaoView())
+    await interaction.response.send_message("✅ Painel de verificação enviado com sucesso!", ephemeral=True)
+    
+
+
+
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
