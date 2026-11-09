@@ -102,7 +102,7 @@ def verificar_nivel_autor(user):
 
 
 # --- 1. COMANDO: /verificar ---
-@bot.tree.command(name="verificar", description="Verifica a tua conta do Roblox e atribui os cargos correspondentes no Discord.")
+@bot.tree.command(name="verificar", description="Verifica a tua conta de Roblox e atribui os cargos correspondentes no Discord")
 @app_commands.describe(username="O teu nome de utilizador (username) no Roblox")
 async def verificar(interaction: discord.Interaction, username: str):
     await interaction.response.defer(ephemeral=True)
@@ -139,7 +139,7 @@ async def verificar(interaction: discord.Interaction, username: str):
                         cargo_grupo_nome = g["role"]["name"].strip()
                         break
     except Exception:
-        await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
+        await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se. Tenta novamente.", ephemeral=True)
         return
 
     if not cargo_grupo_nome:
@@ -152,6 +152,8 @@ async def verificar(interaction: discord.Interaction, username: str):
         return
 
     cat_nome = config_patente["categoria"]
+    cat_nome_nova = cat_nome
+    categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
 
     contas_verificadas[interaction.user.id] = {
         "id": roblox_user_id,
@@ -159,7 +161,19 @@ async def verificar(interaction: discord.Interaction, username: str):
         "name": roblox_name
     }
 
-        membro = interaction.user
+    membro = interaction.user
+    
+    cargos_para_remover = [
+        r for r in membro.roles
+        if (r.name in PATENTES_CONFIG and r.name != cargo_grupo_nome)
+        or (r.name in categorias_todas and r.name != cat_nome_nova)
+    ]
+    if cargos_para_remover:
+        try:
+            await membro.remove_roles(*cargos_para_remover)
+        except Exception:
+            pass
+
     cargo_novo = discord.utils.get(membro.guild.roles, name=cargo_grupo_nome)
     categoria_nova = discord.utils.get(membro.guild.roles, name=cat_nome)
     
@@ -173,11 +187,9 @@ async def verificar(interaction: discord.Interaction, username: str):
     if categoria_nova and categoria_nova not in membro.roles:
         cargos_para_adicionar.append(categoria_nova)
     
-    # Adiciona sempre o verificado se existir no servidor
     if cargo_verificado and cargo_verificado not in membro.roles:
         cargos_para_adicionar.append(cargo_verificado)
         
-    # Adiciona a tag de militares por ter patente válida
     if cargo_militares and cargo_militares not in membro.roles:
         cargos_para_adicionar.append(cargo_militares)
 
@@ -186,7 +198,6 @@ async def verificar(interaction: discord.Interaction, username: str):
             await membro.add_roles(*cargos_para_adicionar)
         except Exception:
             pass
-            
 
     try:
         tag = config_patente["tag"]
@@ -205,6 +216,7 @@ async def verificar(interaction: discord.Interaction, username: str):
     embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Verificação")
 
     await interaction.followup.send(embed=embed, ephemeral=True)
+    
 
 
 # --- 2. COMANDO: /sincronizar ---
