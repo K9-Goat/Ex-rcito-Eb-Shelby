@@ -159,21 +159,34 @@ async def verificar(interaction: discord.Interaction, username: str):
         "name": roblox_name
     }
 
-    membro = interaction.user
+        membro = interaction.user
     cargo_novo = discord.utils.get(membro.guild.roles, name=cargo_grupo_nome)
     categoria_nova = discord.utils.get(membro.guild.roles, name=cat_nome)
+    
+    # Cargos extras automáticos
+    cargo_verificado = discord.utils.get(membro.guild.roles, name="✔️ || Verificado")
+    cargo_militares = discord.utils.get(membro.guild.roles, name="Militares | 🪖")
 
     cargos_para_adicionar = []
     if cargo_novo and cargo_novo not in membro.roles:
         cargos_para_adicionar.append(cargo_novo)
     if categoria_nova and categoria_nova not in membro.roles:
         cargos_para_adicionar.append(categoria_nova)
+    
+    # Adiciona sempre o verificado se existir no servidor
+    if cargo_verificado and cargo_verificado not in membro.roles:
+        cargos_para_adicionar.append(cargo_verificado)
+        
+    # Adiciona a tag de militares por ter patente válida
+    if cargo_militares and cargo_militares not in membro.roles:
+        cargos_para_adicionar.append(cargo_militares)
 
     if cargos_para_adicionar:
         try:
             await membro.add_roles(*cargos_para_adicionar)
         except Exception:
             pass
+            
 
     try:
         tag = config_patente["tag"]
@@ -264,20 +277,30 @@ async def sincronizar(interaction: discord.Interaction):
         except Exception:
             pass
 
-    cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
+        cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
     categoria_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
+    
+    cargo_verificado = discord.utils.get(interaction.guild.roles, name="✔️ || Verificado")
+    cargo_militares = discord.utils.get(interaction.guild.roles, name="Militares | 🪖")
 
     cargos_para_adicionar = []
     if cargo_novo and cargo_novo not in membro.roles:
         cargos_para_adicionar.append(cargo_novo)
     if categoria_nova and categoria_nova not in membro.roles:
         cargos_para_adicionar.append(categoria_nova)
+        
+    if cargo_verificado and cargo_verificado not in membro.roles:
+        cargos_para_adicionar.append(cargo_verificado)
+        
+    if cargo_militares and cargo_militares not in membro.roles:
+        cargos_para_adicionar.append(cargo_militares)
 
     if cargos_para_adicionar:
         try:
             await membro.add_roles(*cargos_para_adicionar)
         except Exception:
             pass
+            
 
     try:
         tag = config_patente["tag"]
