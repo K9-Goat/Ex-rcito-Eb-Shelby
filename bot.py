@@ -136,7 +136,7 @@ async def verificar(interaction: discord.Interaction, username: str):
                 cargo_grupo_nome = None
                 for g in roles_data.get("data", []):
                     if g["group"]["id"] == ROBLOX_GROUP_ID:
-                        cargo_grupo_nome = g["role"]["name"]
+                        cargo_grupo_nome = g["role"]["name"].strip()
                         break
     except Exception:
         await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
@@ -226,7 +226,7 @@ async def sincronizar(interaction: discord.Interaction):
 
                 for g in roles_data.get("data", []):
                     if g["group"]["id"] == ROBLOX_GROUP_ID:
-                        cargo_grupo_nome = g["role"]["name"]
+                        cargo_grupo_nome = g["role"]["name"].strip()
                         break
     except Exception:
         await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se ou ocorreu um erro. Tenta novamente.", ephemeral=True)
