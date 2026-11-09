@@ -878,6 +878,239 @@ async def painel_verificacao(interaction: discord.Interaction):
     
 
 
+# --- 1. MODAL PARA VINCULAR CONTA (Botão "Vincular conta") ---
+class ModalVerificacao(discord.ui.Modal, title="Verificação de Conta - Roblox"):
+    username_roblox = discord.ui.TextInput(
+        label="Nome de utilizador (Username) no Roblox",
+        placeholder="Ex: TeuNickNoRoblox",
+        required=True,
+        max_length=50
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        username = self.username_roblox.value.strip()
+
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                url_user = "https://users.roblox.com/v1/usernames/users"
+                payload = {"usernames": [username], "excludeBannedUsers": True}
+                async with session.post(url_user, json=payload) as resp_user:
+                    if resp_user.status != 200:
+                        await interaction.followup.send("❌ Erro ao comunicar com a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                        return
+                    
+                    data_user = await resp_user.json()
+                    users = data_user.get("data", [])
+                    if not users:
+                        await interaction.followup.send(f"❌ Não foi encontrada nenhuma conta no Roblox com o nome **{username}**.", ephemeral=True)
+                        return
+                    
+                    roblox_user_id = users[0]["id"]
+                    roblox_display = users[0]["displayName"]
+                    roblox_name = users[0]["name"]
+
+                url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+                async with session.get(url_role) as resp_role:
+                    if resp_role.status != 200:
+                        await interaction.followup.send("❌ Erro ao consultar os grupos do Roblox.", ephemeral=True)
+                        return
+                    
+                    roles_data = await resp_role.json()
+                    cargo_grupo_nome = None
+                    for g in roles_data.get("data", []):
+                        if g["group"]["id"] == ROBLOX_GROUP_ID:
+                            cargo_grupo_nome = g["role"]["name"].strip()
+                            break
+        except Exception:
+            await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se. Tenta novamente.", ephemeral=True)
+            return
+
+        if not cargo_grupo_nome:
+            await interaction.followup.send(f"❌ A tua conta (**{roblox_display}**) não está no grupo oficial do Exército no Roblox.", ephemeral=True)
+            return
+
+        config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+        if not config_patente:
+            await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está mapeado nas patentes do bot.", ephemeral=True)
+            return
+
+        cat_nome = config_patente["categoria"]
+        cat_nome_nova = cat_nome
+        categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
+
+        contas_verificadas[interaction.user.id] = {
+            "id": roblox_user_id,
+            "display": roblox_display,
+            "name": roblox_name
+        }
+
+        membro = interaction.user
+        
+        cargos_para_remover = [
+            r for r in membro.roles
+            if (r.name in PATENTES_CONFIG and r.name != cargo_grupo_nome)
+            or (r.name in categorias_todas and r.name != cat_nome_nova)
+        ]
+        if cargos_para_remover:
+            try:
+                await membro.remove_roles(*cargos_para_remover)
+            except Exception:
+                pass
+
+        cargo_novo = discord.utils.get(membro.guild.roles, name=cargo_grupo_nome)
+        categoria_nova = discord.utils.get(membro.guild.roles, name=cat_nome)
+        
+        # Cargos extras automáticos
+        cargo_verificado = discord.utils.get(membro.guild.roles, name="✔️ || Verificado")
+        cargo_militares = discord.utils.get(membro.guild.roles, name="Militares | 🪖")
+
+        cargos_para_adicionar = []
+        if cargo_novo and cargo_novo not in membro.roles:
+            cargos_para_adicionar.append(cargo_novo)
+        if categoria_nova and categoria_nova not in membro.roles:
+            cargos_para_adicionar.append(categoria_nova)
+        if cargo_verificado and cargo_verificado not in membro.roles:
+            cargos_para_adicionar.append(cargo_verificado)
+        if cargo_militares and cargo_militares not in membro.roles:
+            cargos_para_adicionar.append(cargo_militares)
+
+        if cargos_para_adicionar:
+            try:
+                await membro.add_roles(*cargos_para_adicionar)
+            except Exception:
+                pass
+
+        try:
+            tag = config_patente["tag"]
+            await membro.edit(nick=f"{tag} {roblox_display}"[:32])
+        except Exception:
+            pass
+
+        embed = discord.Embed(
+            title="✅ Verificação Concluída!",
+            description="A tua conta foi verificada com sucesso e os teus cargos foram atribuídos.",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
+        embed.add_field(name="🎖️ Patente", value=cargo_grupo_nome, inline=True)
+        embed.add_field(name="📂 Categoria", value=cat_nome, inline=True)
+        embed.set_footer(text="Exército Brasileiro do Shelby · Sistema de Verificação")
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+# --- 2. VIEW DO PAINEL (Botões Interativos) ---
+class PainelVerificacaoView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    # Botão Sincronizar Agora
+    @discord.ui.button(label="Sincronizar agora", style=discord.ButtonStyle.green, emoji="🔄", custom_id="btn_sincronizar")
+    async def btn_sincronizar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        membro = interaction.user
+
+        if membro.id not in contas_verificadas:
+            await interaction.response.send_message(
+                "❌ Ainda não estás verificado! Clica primeiro em **Vincular conta** para registar o teu nick do Roblox.",
+                ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        dados_roblox = contas_verificadas[membro.id]
+        roblox_user_id = dados_roblox["id"]
+        roblox_display = dados_roblox["display"]
+        roblox_name = dados_roblox["name"]
+
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                url_role = f"https://groups.roblox.com/v1/users/{roblox_user_id}/groups/roles"
+                async with session.get(url_role) as resp_role:
+                    if resp_role.status != 200:
+                        await interaction.followup.send("❌ Erro ao consultar a API do Roblox. Tenta novamente mais tarde.", ephemeral=True)
+                        return
+
+                    roles_data = await resp_role.json()
+                    cargo_grupo_nome = None
+
+                    for g in roles_data.get("data", []):
+                        if g["group"]["id"] == ROBLOX_GROUP_ID:
+                            cargo_grupo_nome = g["role"]["name"].strip()
+                            break
+        except Exception:
+            await interaction.followup.send("❌ O tempo limite de ligação ao Roblox esgotou-se. Tenta novamente.", ephemeral=True)
+            return
+
+        if not cargo_grupo_nome:
+            await interaction.followup.send(f"❌ Não encontramos a tua conta (**{roblox_display}**) no grupo oficial do Exército no Roblox.", ephemeral=True)
+            return
+
+        config_patente = PATENTES_CONFIG.get(cargo_grupo_nome)
+        if not config_patente:
+            await interaction.followup.send(f"⚠️ O teu cargo atual no Roblox (**{cargo_grupo_nome}**) não está mapeado nas patentes do bot.", ephemeral=True)
+            return
+
+        cat_nome_nova = config_patente["categoria"]
+        categorias_todas = set(cfg["categoria"] for cfg in PATENTES_CONFIG.values())
+        
+        cargos_para_remover = [
+            r for r in membro.roles
+            if (r.name in PATENTES_CONFIG and r.name != cargo_grupo_nome)
+            or (r.name in categorias_todas and r.name != cat_nome_nova)
+        ]
+
+        if cargos_para_remover:
+            try:
+                await membro.remove_roles(*cargos_para_remover)
+            except Exception:
+                pass
+
+        cargo_novo = discord.utils.get(interaction.guild.roles, name=cargo_grupo_nome)
+        categoria_nova = discord.utils.get(interaction.guild.roles, name=cat_nome_nova)
+        cargo_verificado = discord.utils.get(interaction.guild.roles, name="✔️ || Verificado")
+        cargo_militares = discord.utils.get(interaction.guild.roles, name="Militares | 🪖")
+
+        cargos_para_adicionar = []
+        for c in [cargo_novo, categoria_nova, cargo_verificado, cargo_militares]:
+            if c and c not in membro.roles:
+                cargos_para_adicionar.append(c)
+
+        if cargos_para_adicionar:
+            try:
+                await membro.add_roles(*cargos_para_adicionar)
+            except Exception:
+                pass
+
+        try:
+            tag = config_patente["tag"]
+            await membro.edit(nick=f"{tag} {roblox_display}"[:32])
+        except Exception:
+            pass
+
+        embed = discord.Embed(
+            title="🔄 Sincronização Concluída!",
+            description="Os teus cargos foram atualizados com base no teu rank atual no Roblox.",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="👤 Roblox", value=f"{roblox_display} (`@{roblox_name}`)", inline=True)
+        embed.add_field(name="🎖️ Patente Atribuída", value=cargo_grupo_nome, inline=True)
+        embed.add_field(name="📂 Categoria Atribuída", value=cat_nome_nova, inline=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    # Botão Vincular Conta (Abre o formulário modal)
+    @discord.ui.button(label="Vincular conta", style=discord.ButtonStyle.blurple, emoji="🔗", custom_id="btn_vincular")
+    async def btn_vincular(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ModalVerificacao())
+
+    # Botão Problema?
+    @discord.ui.button(label="Problema?", style=discord.ButtonStyle.red, emoji="⚠️", custom_id="btn_problema")
+    async def btn_problema(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("⚠️ Se tens algum problema com a verificação, entra em contacto com a Administração.", ephemeral=True)
+            
+
+
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
