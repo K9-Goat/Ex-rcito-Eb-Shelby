@@ -1124,12 +1124,12 @@ class PainelSuporteView(discord.ui.View):
         ))
         
         # Botão para o servidor do Poder Judiciário (PJ)
-        self.add_item(discord.ui.Button(
-            label="Acessar Poder Judiciário", 
-            style=discord.ButtonStyle.link, 
-            emoji="⚖️", 
-            url="COLOCA_AQUI_O_LINK_DO_DISCORD_DO_PJ"
-        ))
+        #self.add_item(discord.ui.Button(
+           # label="Acessar Poder Judiciário", 
+          #  style=discord.ButtonStyle.link, 
+         #   emoji="⚖️", 
+        #    url=""
+       # ))
 
 @bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx e PJ)")
 @app_commands.checks.has_permissions(administrator=True)
