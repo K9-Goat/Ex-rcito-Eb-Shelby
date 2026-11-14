@@ -1111,6 +1111,56 @@ class PainelVerificacaoView(discord.ui.View):
             
 
 
+class PainelSuporteView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        
+        # Botão para o servidor da SGEx com o emoji 🆘
+        self.add_item(discord.ui.Button(
+            label="Acessar Secretaria-Geral", 
+            style=discord.ButtonStyle.link, 
+            emoji="🆘", 
+            url="https://discord.gg/3BwPTRXVMD"
+        ))
+        
+        # Botão para o servidor do Poder Judiciário (PJ)
+        self.add_item(discord.ui.Button(
+            label="Acessar Poder Judiciário", 
+            style=discord.ButtonStyle.link, 
+            emoji="⚖️", 
+            url="COLOCA_AQUI_O_LINK_DO_DISCORD_DO_PJ"
+        ))
+
+@bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx e PJ)")
+@app_commands.checks.has_permissions(administrator=True)
+async def painel_suporte(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Servidor de Suporte",
+        description=(
+            "Neste servidor, você pode tratar diversos assuntos, como:\n\n"
+            "• Denúncias\n"
+            "• Revogação de patente\n"
+            "• Medalhas\n"
+            "• Entre outros assuntos relacionados\n\n"
+            "Vale ressaltar que é extremamente importante respeitar os membros da **SGEx**, "
+            "que estão desempenhando um trabalho público em prol da comunidade, esse "
+            "servidor foi criado para ajudar a comunidade, no caso, são os "
+            "administradores de nossa comunidade.\n\n"
+            "Secretaria-Geral do Exército\n\n"
+            "Também contamos com o **Poder Judiciário**, onde você pode abrir processos e "
+            "tratar de questões judiciais dentro do Exército Brasileiro.\n\n"
+            "Poder Judiciário"
+        ),
+        color=discord.Color.dark_embed()
+    )
+    
+    embed.set_image(url="https://cdn.discordapp.com/attachments/1567468110292848673/1571205477881086233/image0.jpg?ex=6af9e2a1&is=6af89121&hm=a86190728e6216b3a65d4c0af23304328fdcf3d8eaa81cc5164e1056c68491d4&")
+    
+    await interaction.channel.send(embed=embed, view=PainelSuporteView())
+    await interaction.response.send_message("✅ Painel de suporte enviado com sucesso!", ephemeral=True)
+        
+
+
 
 # --- SERVIDOR WEB DUMMY PARA O RENDER (KEEP ALIVE) ---
 class SimpleHandler(BaseHTTPRequestHandler):
