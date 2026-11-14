@@ -1134,6 +1134,9 @@ class PainelSuporteView(discord.ui.View):
 @bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx e PJ)")
 @app_commands.checks.has_permissions(administrator=True)
 async def painel_suporte(interaction: discord.Interaction):
+    # 1. Responde logo à interação para o Discord saber que o bot está vivo (evita o erro)
+    await interaction.response.send_message("✅ Painel de suporte enviado com sucesso!", ephemeral=True)
+    
     embed = discord.Embed(
         title="Servidor de Suporte",
         description=(
@@ -1156,9 +1159,8 @@ async def painel_suporte(interaction: discord.Interaction):
     
     embed.set_image(url="https://cdn.discordapp.com/attachments/1567468110292848673/1571205477881086233/image0.jpg?ex=6af9e2a1&is=6af89121&hm=a86190728e6216b3a65d4c0af23304328fdcf3d8eaa81cc5164e1056c68491d4&")
     
+    # 2. Envia o painel para o canal
     await interaction.channel.send(embed=embed, view=PainelSuporteView())
-    await interaction.response.send_message("✅ Painel de suporte enviado com sucesso!", ephemeral=True)
-        
 
 
 
