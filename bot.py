@@ -1115,26 +1115,34 @@ class PainelSuporteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         
-        # Botão para o servidor da SGEx com o emoji 🆘
+        # Botão para o servidor da SGEx
         self.add_item(discord.ui.Button(
             label="Acessar Secretaria-Geral", 
             style=discord.ButtonStyle.link, 
             emoji="🆘", 
-            url="https://discord.gg/3BwPTRXVMD"
+            url="https://discord.gg/dvxsBAkfdE"
+        ))
+
+        # Botão para o servidor do DCD
+        self.add_item(discord.ui.Button(
+            label="Acessar DCD", 
+            style=discord.ButtonStyle.link, 
+            emoji="🛡️", 
+            url="https://discord.gg/EtEbVmM2Z7"
         ))
         
-        # Botão para o servidor do Poder Judiciário (PJ)
-        #self.add_item(discord.ui.Button(
-           # label="Acessar Poder Judiciário", 
-          #  style=discord.ButtonStyle.link, 
-         #   emoji="⚖️", 
-        #    url=""
-       # ))
+        # Botão para o servidor do Poder Judiciário (PJ) - comentado até criar o servidor
+        # self.add_item(discord.ui.Button(
+        #     label="Acessar Poder Judiciário", 
+        #     style=discord.ButtonStyle.link, 
+        #     emoji="⚖️", 
+        #     url=""
+        # ))
 
-@bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx e PJ)")
+
+@bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx, DCD e PJ)")
 @app_commands.checks.has_permissions(administrator=True)
 async def painel_suporte(interaction: discord.Interaction):
-    # 1. Responde logo à interação para o Discord saber que o bot está vivo (evita o erro)
     await interaction.response.send_message("✅ Painel de suporte enviado com sucesso!", ephemeral=True)
     
     embed = discord.Embed(
@@ -1150,17 +1158,21 @@ async def painel_suporte(interaction: discord.Interaction):
             "servidor foi criado para ajudar a comunidade, no caso, são os "
             "administradores de nossa comunidade.\n\n"
             "Secretaria-Geral do Exército\n\n"
-            "Também contamos com o **Poder Judiciário**, onde você pode abrir processos e "
+            "Também contamos com o **DCD (Departamento de Controle Divisional)**, "
+            "responsável pelo acompanhamento, organização e fiscalização das divisões "
+            "e atividades internas da corporação.\n\n"
+            "Departamento de Controle Divisional\n\n"
+            "Além disso, contamos com o **Poder Judiciário**, onde você pode abrir processos e "
             "tratar de questões judiciais dentro do Exército Brasileiro.\n\n"
             "Poder Judiciário"
         ),
         color=discord.Color.dark_embed()
     )
     
-    embed.set_image(url="https://cdn.discordapp.com/attachments/1567468110292848673/1571205477881086233/image0.jpg?ex=6af9e2a1&is=6af89121&hm=a86190728e6216b3a65d4c0af23304328fdcf3d8eaa81cc5164e1056c68491d4&")
+    embed.set_image(url="https://cdn.discordapp.com/attachments/1567468110292848673/1571205477881086233/image0.jpg?ex=6b031d21&is=6b01cba1&hm=796635f0f3106c9af3a67fa3cf58baa6ce339dd5c7ac5c61f43e756cf1a8dddb&")
     
-    # 2. Envia o painel para o canal
     await interaction.channel.send(embed=embed, view=PainelSuporteView())
+        
 
 
 
