@@ -1114,30 +1114,31 @@ class PainelVerificacaoView(discord.ui.View):
 class PainelSuporteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        
+
         # Botão para o servidor da SGEx
         self.add_item(discord.ui.Button(
-            label="Acessar Secretaria-Geral", 
-            style=discord.ButtonStyle.link, 
-            emoji="🆘", 
+            label="Acessar Secretaria-Geral",
+            style=discord.ButtonStyle.link,
+            emoji="🆘",
             url="https://discord.gg/dvxsBAkfdE"
         ))
 
         # Botão para o servidor do DCD
         self.add_item(discord.ui.Button(
-            label="Acessar DCD", 
-            style=discord.ButtonStyle.link, 
-            emoji="🛡️", 
-            url="https://discord.gg/EtEbVmM2Z7"
+            label="Acessar DCD",
+            style=discord.ButtonStyle.link,
+            emoji="🛡️",
+            url="https://discord.gg/EtEnVnM2Z7"
+        ))
+
+        # Botão para o servidor do Poder Judiciário (PJ)
+        self.add_item(discord.ui.Button(
+            label="Acessar Poder Judiciário",
+            style=discord.ButtonStyle.link,
+            emoji="⚖️",
+            url="https://discord.gg/Y7pMTCYafC"
         ))
         
-        # Botão para o servidor do Poder Judiciário 
-         self.add_item(discord.ui.Button(
-             label="Acessar Poder Judiciário", 
-             style=discord.ButtonStyle.link, 
-             emoji="⚖️", 
-             url="https://discord.gg/Y7pMTCYafC"
-         ))
 
 
 @bot.tree.command(name="painel_suporte", description="Envia o painel oficial de suporte (SGEx, DCD e PJ)")
