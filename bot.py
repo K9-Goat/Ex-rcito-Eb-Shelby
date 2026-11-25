@@ -1131,7 +1131,7 @@ class PainelSuporteView(discord.ui.View):
             url="https://discord.gg/EtEbVmM2Z7"
         ))
         
-         Botão para o servidor do Poder Judiciário (PJ) - comentado até criar o servidor
+        # Botão para o servidor do Poder Judiciário (PJ) - comentado até criar o servidor
          self.add_item(discord.ui.Button(
              label="Acessar Poder Judiciário", 
              style=discord.ButtonStyle.link, 
